@@ -467,9 +467,9 @@ __metadata:
   linkType: hard
 
 "@tsconfig/node10@npm:^1.0.7":
-  version: 1.0.10
-  resolution: "@tsconfig/node10@npm:1.0.10"
-  checksum: 10c0/b980cd179fba3aec6c63606e9087ac36a5b45a04c7e239c875af33f08b1a4f3611ad59537c5f76100cf563f5627e830c178121729703834da07b6ec4f2eecd20
+  version: 1.0.11
+  resolution: "@tsconfig/node10@npm:1.0.11"
+  checksum: 10c0/28a0710e5d039e0de484bdf85fee883bfd3f6a8980601f4d44066b0a6bcd821d31c4e231d1117731c4e24268bd4cf2a788a6787c12fc7f8d11014c07d582783c
   languageName: node
   linkType: hard
 
@@ -1543,9 +1543,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.4.668":
-  version: 1.4.716
-  resolution: "electron-to-chromium@npm:1.4.716"
-  checksum: 10c0/8ab3d5def384756e520d23f7e303d5dbfc9d0c789a9ebb994deae52ce0d2ab7b5d32bbad77806b2b3a7089d98d1fdf33284ed9f11d6135dafd05662ef4bece9e
+  version: 1.4.718
+  resolution: "electron-to-chromium@npm:1.4.718"
+  checksum: 10c0/e3982ea424d85d9c66b93ac15e9bfd5852f3c51688af2ba4948735dca0c52b1ac15d3cdff4cfebcd3cdcb8ad028f6c3625e9a12f3c7278958cfdf397d44c748c
   languageName: node
   linkType: hard
 
