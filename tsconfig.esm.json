@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.cjs.json",
+  "compilerOptions": {
+    "outDir": "./esm",
+    "module": "es2022",
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "./src/promptfactory.cjs.node.ts",
+    "./src/promptfactory.cjs.worker.ts"
+  ]
+}

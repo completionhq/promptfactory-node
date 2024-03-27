@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "outDir": "./cjs",
+    "module": "commonjs",
+    "target": "es2017",
+    "checkJs": false,
+    "alwaysStrict": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strict": true,
+    "strictFunctionTypes": true,
+    "types": ["node"],
+    "esModuleInterop": false // This is a viral option, do not enable https://www.semver-ts.org/#module-interop
+  },
+  "include": ["./src/**/*"],
+  "exclude": [
+    "./src/promptfactory.esm.node.ts",
+    "./src/promptfactory.esm.worker.ts"
+  ]
+}
