@@ -527,6 +527,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/js-yaml@npm:^4":
+  version: 4.0.9
+  resolution: "@types/js-yaml@npm:4.0.9"
+  checksum: 10c0/24de857aa8d61526bbfbbaa383aa538283ad17363fcd5bb5148e2c7f604547db36646440e739d78241ed008702a8920665d1add5618687b6743858fae00da211
+  languageName: node
+  linkType: hard
+
 "@types/json-schema@npm:*, @types/json-schema@npm:^7.0.12":
   version: 7.0.15
   resolution: "@types/json-schema@npm:7.0.15"
@@ -3989,6 +3996,7 @@ __metadata:
     "@types/chai": "npm:^4.3.4"
     "@types/chai-as-promised": "npm:^7.1.5"
     "@types/eslint": "npm:^8"
+    "@types/js-yaml": "npm:^4"
     "@types/mocha": "npm:^10.0.6"
     "@types/node": "npm:>=8.1.0"
     "@types/qs": "npm:^6.9.7"
@@ -4002,6 +4010,7 @@ __metadata:
     eslint-plugin-import: "npm:^2.28"
     eslint-plugin-prettier: "npm:^3.4.1"
     husky: "npm:^9.0.11"
+    js-yaml: "npm:^4.1.0"
     lint-staged: "npm:^15.2.2"
     mocha: "npm:^8.4.0"
     mocha-junit-reporter: "npm:^2.1.0"

@@ -12,6 +12,7 @@
     "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",
     "@types/eslint": "^8",
+    "@types/js-yaml": "^4",
     "@types/mocha": "^10.0.6",
     "@types/qs": "^6.9.7",
     "@typescript-eslint/eslint-plugin": "^7.4.0",
@@ -39,7 +40,8 @@
     "nanoid": "^3.2.0"
   },
   "dependencies": {
-    "@types/node": ">=8.1.0"
+    "@types/node": ">=8.1.0",
+    "js-yaml": "^4.1.0"
   },
   "scripts": {
     "build": "yarn build-esm && yarn build-cjs",

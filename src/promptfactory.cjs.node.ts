@@ -1,13 +1,22 @@
-// import { NodePlatformFunctions } from './platform/NodePlatformFunctions.js';
-// import { createStripe } from './stripe.core.js';
+// Import PromptFactory using require
+const PromptFactory = require('./prompt-factory');
 
-// const Stripe = createStripe(new NodePlatformFunctions());
+// Export PromptFactory both as a named export and as the default export
+module.exports.PromptFactory = PromptFactory;
+module.exports.default = PromptFactory;
 
-// module.exports = Stripe;
+// Export all from the specified modules. In CommonJS, you typically require each module and then explicitly re-export each named export. Since CommonJS doesn't support wildcard re-exports directly, you might need to individually export each named export or find a workaround if you have many exports.
 
-// // expose constructor as a named property to enable mocking with Sinon.JS
-// module.exports.Stripe = Stripe;
+// Assuming you have a finite set of named exports in each of these modules, you could do something like this:
 
-// // Allow use with the TypeScript compiler without `esModuleInterop`.
-// // We may also want to add `Object.defineProperty(exports, "__esModule", {value: true});` in the future, so that Babel users will use the `default` version.
-// module.exports.default = Stripe;
+// For ./types
+const types = require('./types');
+Object.assign(module.exports, types);
+
+// For ./utils
+const utils = require('./utils');
+Object.assign(module.exports, utils);
+
+// For ./file-serializer
+const fileSerializer = require('./file-serializer');
+Object.assign(module.exports, fileSerializer);

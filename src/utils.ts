@@ -35,7 +35,7 @@ export const hydrateAndValidateFStringTemplate = (
 };
 
 // Define an enumeration for supported serialization formats
-export enum SerializationFormat {
+export enum PromptSerializationFormat {
   JSON = 'json',
   CUSTOM = 'custom',
 }
@@ -47,16 +47,16 @@ export const DefaultRoleDelimiter = '=>>';
 export const serializeChatCompletionParameters = (
   messages: Array<ChatCompletionParameter>,
   options: {
-    format?: SerializationFormat;
+    format?: PromptSerializationFormat;
     customRoleDelimiter?: string;
     customLineDelimiter?: string;
   } = {
-    format: SerializationFormat.CUSTOM,
+    format: PromptSerializationFormat.CUSTOM,
     customRoleDelimiter: DefaultRoleDelimiter,
     customLineDelimiter: DefaultLineDelimiter,
   },
 ): string => {
-  if (options.format === SerializationFormat.JSON) {
+  if (options.format === PromptSerializationFormat.JSON) {
     // Directly return JSON string if format is JSON\
     try {
       return JSON.stringify(messages);
@@ -83,16 +83,16 @@ export const serializeChatCompletionParameters = (
 export const deserializeChatCompletionParameters = (
   serialized: string,
   options: {
-    format: SerializationFormat;
+    format: PromptSerializationFormat;
     customRoleDelimiter?: string;
     customLineDelimiter?: string;
   } = {
-    format: SerializationFormat.CUSTOM,
+    format: PromptSerializationFormat.CUSTOM,
     customRoleDelimiter: DefaultRoleDelimiter,
     customLineDelimiter: DefaultLineDelimiter,
   },
 ): Array<ChatCompletionParameter> => {
-  if (options.format === SerializationFormat.JSON) {
+  if (options.format === PromptSerializationFormat.JSON) {
     // Directly parse JSON string if format is JSON
     try {
       return JSON.parse(serialized);

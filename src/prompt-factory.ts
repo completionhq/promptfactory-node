@@ -1,3 +1,4 @@
+import { FileSerializationFormat, loadPromptFromFile } from './file-serializer';
 import {
   ChatCompletionParameter,
   PromptArguments,
@@ -19,18 +20,45 @@ export class PromptFactory {
   public promptArguments?: PromptArguments;
 
   public parser: PromptParser = PromptParser.FString;
+  public fileSerializationFormat?: FileSerializationFormat;
 
   constructor(name: string, options?: PromptOptions) {
     this.name = name;
-    this.initialize(options);
+    this.initialize(options).catch(err => {
+      throw new Error(`PromptFactory: ${err}`);
+    });
   }
 
-  private initialize(options?: PromptOptions): void {
+  private async initialize(options?: PromptOptions): Promise<void> {
+    this.parser = options?.parser ?? PromptParser.FString;
+    this.fileSerializationFormat =
+      options?.fileSerializationFormat ?? FileSerializationFormat.YAML;
+
     if (options?.file) {
-      // Load from file logic here
+      const pf = await loadPromptFromFile(
+        options.file,
+        this.fileSerializationFormat,
+      );
+      this.promptTemplate = pf.promptTemplate;
+      this.messagesTemplate = pf.messagesTemplate;
+      this.promptArguments = pf.promptArguments;
+      this.parser = pf.parser;
+      // Validate the prompt arguments if they are set
+      if (
+        this.promptArguments &&
+        (options.promptTemplate || options.messagesTemplate)
+      ) {
+        this.validatePromptArguments(this.promptArguments);
+      }
     } else {
       if (options?.promptTemplate) {
         this.setPromptTemplate(options.promptTemplate);
+      }
+      if (options?.messagesTemplate) {
+        this.setMessagesTemplate(options.messagesTemplate);
+      }
+      if (options?.parser) {
+        this.parser = options.parser;
       }
       if (options?.promptArguments) {
         this.setPromptArguments(options.promptArguments);
@@ -54,10 +82,6 @@ export class PromptFactory {
           promptArguments,
         );
         break;
-      case PromptParser.Jinja2:
-        throw new Error('Jinja2 parser is not supported');
-      case PromptParser.Handlebars:
-        throw new Error('Handlebars parser is not supported');
       default:
         throw new Error('Invalid parser provided');
     }
@@ -131,5 +155,28 @@ export class PromptFactory {
     );
 
     return deserializeChatCompletionParameters(hydratedMessages);
+  }
+
+  private validatePromptArguments(args: PromptArguments): void {
+    const template = this.promptTemplate ?? this.messagesTemplate;
+    if (template === undefined) {
+      throw new Error('Prompt or messages template is not set');
+    }
+    this.validatePromptOrMessagesTemplate(template, args, this.parser);
+  }
+
+  validatePrompt(): void {
+    if (this.promptTemplate === undefined) {
+      throw new Error('Prompt template is not set');
+    }
+    if (this.promptArguments === undefined) {
+      throw new Error('Prompt arguments are not set');
+    }
+
+    this.validatePromptOrMessagesTemplate(
+      this.promptTemplate,
+      this.promptArguments,
+      this.parser,
+    );
   }
 }
