@@ -14,7 +14,6 @@ export interface PromptOptions {
   fileSerializationFormat?: FileSerializationFormat;
 }
 
-// Modeled after the ChatCompletionMessageParam type by OpenAI, but more specific
 export type ChatCompletionParameter = {
   role: string;
   content: string;
