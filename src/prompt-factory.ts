@@ -179,4 +179,14 @@ export class PromptFactory {
       this.parser,
     );
   }
+
+  hydrate(): string | Array<ChatCompletionParameter> {
+    if (this.promptTemplate !== undefined) {
+      return this.hydratePromptTemplate();
+    } else if (this.messagesTemplate !== undefined) {
+      return this.hydrateMessagesTemplate();
+    } else {
+      throw new Error('Prompt or messages template is not set');
+    }
+  }
 }
