@@ -314,5 +314,85 @@ describe('Utilities', () => {
         deserializeChatCompletionParameters(serialized, deserializeOptions),
       ).to.throw(Error, 'Missing delimiter in input string.');
     });
+
+    it('should correctly handle custom name delimiters in a round-trip serialization and deserialization', function() {
+      const originalMessages = [
+        { role: 'user', name: 'Alice', content: 'Hello, world!' },
+        { role: 'bot', name: 'Bot', content: 'Hello, Alice!' },
+      ];
+
+      const options = {
+        format: PromptSerializationFormat.CUSTOM,
+        customNameDelimiter: '%%',
+      };
+
+      const serialized = serializeChatCompletionParameters(
+        originalMessages,
+        options,
+      );
+      const deserialized = deserializeChatCompletionParameters(
+        serialized,
+        options,
+      );
+
+      expect(deserialized).to.deep.equal(originalMessages);
+    });
+
+    // Uses default delimiters for serialization and deserialization
+    it('should correctly handle default name delimiters in a round-trip serialization / deserialization', function() {
+      const originalMessages = [
+        { role: 'user', name: 'Alice', content: 'Hello, world!' },
+        { role: 'bot', name: 'Bot', content: 'Hello, Alice!' },
+      ];
+
+      const options = {
+        format: PromptSerializationFormat.CUSTOM,
+      };
+
+      const serialized = serializeChatCompletionParameters(
+        originalMessages,
+        options,
+      );
+      const deserialized = deserializeChatCompletionParameters(
+        serialized,
+        options,
+      );
+
+      expect(deserialized).to.deep.equal(originalMessages);
+    });
+
+    it('should incorrectly extract role and content without name due to delimiter issues', function() {
+      const originalMessages = [
+        { role: 'user', name: 'Alice', content: 'Hello, world!' },
+      ];
+
+      const serializationOptions = {
+        format: PromptSerializationFormat.CUSTOM,
+        customNameDelimiter: '%%', // Suppose this is correctly used in serialization
+      };
+
+      const serialized = serializeChatCompletionParameters(
+        originalMessages,
+        serializationOptions,
+      );
+
+      // Simulating a deserialization option that incorrectly handles the custom name delimiter
+      const deserializationOptions = {
+        format: PromptSerializationFormat.CUSTOM,
+      };
+
+      const deserialized = deserializeChatCompletionParameters(
+        serialized,
+        deserializationOptions,
+      );
+
+      // The expected outcome is incorrect due to the wrong delimiter handling
+      // Assuming the test is designed to show what happens when things go wrong
+      const expectedOutcome = [
+        { role: 'user%%Alice', content: 'Hello, world!' }, // Incorrect extraction
+      ];
+
+      expect(deserialized).to.deep.equal(expectedOutcome);
+    });
   });
 });

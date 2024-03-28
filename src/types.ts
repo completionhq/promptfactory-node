@@ -17,4 +17,5 @@ export interface PromptOptions {
 export type ChatCompletionParameter = {
   role: string;
   content: string;
+  name?: string;
 };

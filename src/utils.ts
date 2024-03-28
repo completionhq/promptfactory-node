@@ -40,8 +40,10 @@ export enum PromptSerializationFormat {
   CUSTOM = 'custom',
 }
 
-export const DefaultLineDelimiter = '<&&pf-line&&>';
-export const DefaultRoleDelimiter = '=>>';
+export const DEFAULT_LINE_DELIMITER = '<&&pf-line&&>';
+export const DEFAULT_ROLE_DELIMITER = '=>>';
+
+export const DEFAULT_NAME_DELIMITER = '$$';
 
 // Serializer function with options for format and custom delimiters
 export const serializeChatCompletionParameters = (
@@ -50,10 +52,12 @@ export const serializeChatCompletionParameters = (
     format?: PromptSerializationFormat;
     customRoleDelimiter?: string;
     customLineDelimiter?: string;
+    customNameDelimiter?: string;
   } = {
     format: PromptSerializationFormat.CUSTOM,
-    customRoleDelimiter: DefaultRoleDelimiter,
-    customLineDelimiter: DefaultLineDelimiter,
+    customRoleDelimiter: DEFAULT_ROLE_DELIMITER,
+    customLineDelimiter: DEFAULT_LINE_DELIMITER,
+    customNameDelimiter: DEFAULT_NAME_DELIMITER,
   },
 ): string => {
   if (options.format === PromptSerializationFormat.JSON) {
@@ -70,11 +74,19 @@ export const serializeChatCompletionParameters = (
     }
   } else {
     // Use custom serialization with provided delimiter
-    const delimiter = options.customRoleDelimiter ?? DefaultRoleDelimiter;
-    const lineDelimiter = options.customLineDelimiter ?? DefaultLineDelimiter;
+    const roleDelimiter = options.customRoleDelimiter ?? DEFAULT_ROLE_DELIMITER;
+    const lineDelimiter = options.customLineDelimiter ?? DEFAULT_LINE_DELIMITER;
+    const nameDelimiter = options.customNameDelimiter ?? DEFAULT_NAME_DELIMITER;
 
     return messages
-      .map(param => `${param.role}${delimiter}${param.content}`)
+      .map(param => {
+        const serializedRoleAndName =
+          param.name !== undefined
+            ? `${param.role}${nameDelimiter}${param.name}${roleDelimiter}`
+            : `${param.role}${roleDelimiter}`;
+        const serializedMessage = `${serializedRoleAndName}${param.content}`;
+        return serializedMessage;
+      })
       .join(lineDelimiter);
   }
 };
@@ -86,10 +98,12 @@ export const deserializeChatCompletionParameters = (
     format: PromptSerializationFormat;
     customRoleDelimiter?: string;
     customLineDelimiter?: string;
+    customNameDelimiter?: string;
   } = {
     format: PromptSerializationFormat.CUSTOM,
-    customRoleDelimiter: DefaultRoleDelimiter,
-    customLineDelimiter: DefaultLineDelimiter,
+    customRoleDelimiter: DEFAULT_ROLE_DELIMITER,
+    customLineDelimiter: DEFAULT_LINE_DELIMITER,
+    customNameDelimiter: DEFAULT_NAME_DELIMITER,
   },
 ): Array<ChatCompletionParameter> => {
   if (options.format === PromptSerializationFormat.JSON) {
@@ -106,21 +120,43 @@ export const deserializeChatCompletionParameters = (
     }
   } else {
     // Use custom deserialization with provided delimiter
-    const delimiter = options.customRoleDelimiter ?? DefaultRoleDelimiter;
-    const lineDelimiter = options.customLineDelimiter ?? DefaultLineDelimiter;
+    const roleDelimiter = options.customRoleDelimiter ?? DEFAULT_ROLE_DELIMITER;
+    const lineDelimiter = options.customLineDelimiter ?? DEFAULT_LINE_DELIMITER;
+    const nameDelimiter = options.customNameDelimiter ?? DEFAULT_NAME_DELIMITER;
     return serialized.split(lineDelimiter).map(param => {
-      const delimiterIndex = param.indexOf(delimiter);
+      const delimiterIndex = param.indexOf(roleDelimiter);
       if (delimiterIndex === -1) {
         throw new Error('Missing delimiter in input string.');
       }
 
-      const role = param.substring(0, delimiterIndex);
-      const content = param.substring(delimiterIndex + delimiter.length);
+      const nameDelimiterIndex = param.indexOf(nameDelimiter);
 
-      if (role === '' || content === '') {
-        throw new Error('Role or content is missing in one of the parameters.');
+      // Check if name delimiter is present and is before role delimiter
+      if (nameDelimiterIndex !== -1 && nameDelimiterIndex < delimiterIndex) {
+        const role = param.substring(0, nameDelimiterIndex);
+        const name = param.substring(
+          nameDelimiterIndex + nameDelimiter.length,
+          delimiterIndex,
+        );
+        const content = param.substring(delimiterIndex + roleDelimiter.length);
+
+        if (role === '' || content === '') {
+          throw new Error(
+            'Role or content is missing in one of the parameters.',
+          );
+        }
+        return { role, content, name };
+      } else {
+        const role = param.substring(0, delimiterIndex);
+        const content = param.substring(delimiterIndex + roleDelimiter.length);
+
+        if (role === '' || content === '') {
+          throw new Error(
+            'Role or content is missing in one of the parameters.',
+          );
+        }
+        return { role, content };
       }
-      return { role, content };
     });
   }
 };
