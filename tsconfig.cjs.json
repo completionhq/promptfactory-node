@@ -10,6 +10,7 @@
     "strict": true,
     "strictFunctionTypes": true,
     "types": ["node"],
+    "declaration": true,
     "esModuleInterop": false // This is a viral option, do not enable https://www.semver-ts.org/#module-interop
   },
   "include": ["./src/**/*"],

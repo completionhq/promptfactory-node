@@ -59,7 +59,6 @@
     "prepare": "husky"
   },
   "exports": {
-    "types": "./types/index.d.ts",
     "browser": {
       "import": "./esm/promptfactory.esm.worker.js",
       "require": "./cjs/promptfactory.cjs.worker.js"
