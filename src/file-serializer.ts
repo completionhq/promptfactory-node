@@ -1,29 +1,52 @@
 import * as fs from 'fs/promises';
 import * as yaml from 'js-yaml';
-import { PromptFactory } from './prompt-factory';
+import {
+  AbstractPromptFactory,
+  MessageArrayPromptFactory,
+  StringPromptFactory,
+} from './prompt-factory';
+import {
+  ChatCompletionParameter,
+  MessageArrayPromptFactoryOptions,
+  PromptArguments,
+  PromptParser,
+  StringPromptFactoryOptions,
+} from './types';
 
 export enum FileSerializationFormat {
   YAML = 'yaml',
   JSON = 'json',
 }
 
+interface SerializedPromptFactory {
+  PromptFactory: string; // Assuming this is a version string
+  name: string; // Assuming 'name' is a string
+  promptTemplate?: string; // Assuming it returns a string representation of the template
+  messagesTemplate?: ChatCompletionParameter[]; // Assuming this is an array, replace 'any' with more specific type if known
+  promptArguments: PromptArguments; // A flexible object for arguments; replace 'any' with more specific types if known
+  parser: PromptParser; // Assuming 'parser' is a function, consider replacing 'Function' with a more specific function type
+}
+
 /**
  * Serializes and saves a PromptFactory instance to a file in JSON or YAML format.
  *
  * @param {string} filePath - The file path to save the prompt to.
- * @param {PromptFactory} promptFactory - The PromptFactory instance to serialize.
+ * @param {AbstractPromptFactory} promptFactory - The PromptFactory instance to serialize.
  * @param {'json' | 'yaml'} format - The format to serialize the prompt (JSON or YAML).
  */
 export async function savePromptToFile(
   filePath: string,
-  promptFactory: PromptFactory,
-  format: FileSerializationFormat,
+  promptFactory: MessageArrayPromptFactory | StringPromptFactory,
+  format: FileSerializationFormat = FileSerializationFormat.JSON,
 ): Promise<void> {
-  const objToSave = {
-    PromptFactory: 'Version 0.0.1',
+  if (promptFactory.promptArguments === undefined) {
+    throw new Error('PromptFactory: promptArguments is not set');
+  }
+  const objToSave: SerializedPromptFactory = {
+    PromptFactory: '1',
     name: promptFactory.name,
-    promptTemplate: promptFactory.promptTemplate,
-    messagesTemplate: promptFactory.messagesTemplate,
+    promptTemplate: promptFactory._getPromptTemplate(),
+    messagesTemplate: promptFactory._getMessagesTemplate(),
     promptArguments: promptFactory.promptArguments,
     parser: promptFactory.parser,
   };
@@ -45,12 +68,12 @@ export async function savePromptToFile(
  *
  * @param {string} filePath - The file path to load the prompt from.
  * @param {'json' | 'yaml'} format - The format of the file content (JSON or YAML).
- * @returns {Promise<PromptFactory>} - The deserialized PromptFactory instance.
+ * @returns {Promise<AbstractPromptFactory>} - The deserialized PromptFactory instance.
  */
 export async function loadPromptFromFile(
   filePath: string,
-  format: FileSerializationFormat,
-): Promise<PromptFactory> {
+  format: FileSerializationFormat = FileSerializationFormat.JSON,
+): Promise<MessageArrayPromptFactory | StringPromptFactory> {
   const fileContent = await fs.readFile(filePath, 'utf-8');
   let obj;
 
@@ -67,7 +90,7 @@ export async function loadPromptFromFile(
     }
   } else if (format === FileSerializationFormat.YAML) {
     try {
-      obj = yaml.load(fileContent);
+      obj = yaml.load(fileContent) as unknown;
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(
@@ -82,12 +105,31 @@ export async function loadPromptFromFile(
     );
   }
 
-  const promptFactory = new PromptFactory(obj.name, {
-    promptTemplate: obj.promptTemplate,
-    messagesTemplate: obj.messagesTemplate,
-    promptArguments: obj.promptArguments,
-    parser: obj.parser,
-  });
+  // Check if the loaded object has the required properties
+  // and cast it to the correct type
+  if (
+    typeof obj !== 'object' ||
+    !('name' in obj) ||
+    (!('promptTemplate' in obj) && !('messagesTemplate' in obj)) ||
+    !('promptArguments' in obj) ||
+    !('parser' in obj)
+  ) {
+    throw new Error('PromptFactory: Invalid file content.');
+  }
 
-  return promptFactory;
+  if ('messagesTemplate' in obj) {
+    return new MessageArrayPromptFactory(
+      obj.name,
+      obj as MessageArrayPromptFactoryOptions,
+    );
+  }
+
+  if ('promptTemplate' in obj) {
+    return new StringPromptFactory(obj.name, obj as StringPromptFactoryOptions);
+  }
+
+  // This should never be reached
+  throw new Error(
+    'PromptFactory: Could not find a prompt template or a messages template.',
+  );
 }

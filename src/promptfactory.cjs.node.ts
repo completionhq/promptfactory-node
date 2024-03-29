@@ -1,6 +1,6 @@
-import { PromptFactory } from './prompt-factory';
+import { AbstractPromptFactory } from './prompt-factory';
 
-export { PromptFactory };
+export { AbstractPromptFactory as PromptFactory };
 
 // Export all types
 export * from './types';
@@ -9,4 +9,4 @@ export * from './utils';
 // Export all file serialization functions
 export * from './file-serializer';
 
-export default PromptFactory;
+export default AbstractPromptFactory;

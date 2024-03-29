@@ -1,9 +1,11 @@
 import { FileSerializationFormat, loadPromptFromFile } from './file-serializer';
 import {
+  AbstractPromptFactoryOptions,
   ChatCompletionParameter,
+  MessageArrayPromptFactoryOptions,
   PromptArguments,
-  PromptOptions,
   PromptParser,
+  StringPromptFactoryOptions,
 } from './types';
 import {
   PromptSerializationFormat,
@@ -12,62 +14,44 @@ import {
   serializeChatCompletionParameters,
 } from './utils';
 
-export class PromptFactory {
+export class AbstractPromptFactory {
   public name: string;
 
-  public promptTemplate?: string;
-  public messagesTemplate?: Array<ChatCompletionParameter>;
+  protected promptTemplate?: string;
+  protected messagesTemplate?: Array<ChatCompletionParameter>;
 
   public promptArguments?: PromptArguments;
 
   public parser: PromptParser = PromptParser.FString;
   public fileSerializationFormat?: FileSerializationFormat;
 
-  constructor(name: string, options?: PromptOptions) {
+  protected constructor(name: string, options: AbstractPromptFactoryOptions) {
     this.name = name;
-    this.initialize(options).catch(err => {
-      throw new Error(`PromptFactory: ${err}`);
-    });
-  }
-
-  private async initialize(options?: PromptOptions): Promise<void> {
-    this.parser = options?.parser ?? PromptParser.FString;
+    this.parser = options.parser ?? PromptParser.FString;
+    this.fileSerializationFormat = options.fileSerializationFormat;
+    this.promptTemplate = options.promptTemplate;
+    this.messagesTemplate = options.messagesTemplate;
+    this.promptArguments = options.promptArguments;
     this.fileSerializationFormat =
-      options?.fileSerializationFormat ?? FileSerializationFormat.YAML;
-
-    if (options?.file) {
-      const pf = await loadPromptFromFile(
-        options.file,
-        this.fileSerializationFormat,
-      );
-      this.promptTemplate = pf.promptTemplate;
-      this.messagesTemplate = pf.messagesTemplate;
-      this.promptArguments = pf.promptArguments;
-      this.parser = pf.parser;
-      // Validate the prompt arguments if they are set
-      if (
-        this.promptArguments &&
-        (options.promptTemplate || options.messagesTemplate)
-      ) {
-        this.validatePromptArguments(this.promptArguments);
-      }
-    } else {
-      if (options?.promptTemplate) {
-        this.setPromptTemplate(options.promptTemplate);
-      }
-      if (options?.messagesTemplate) {
-        this.setMessagesTemplate(options.messagesTemplate);
-      }
-      if (options?.parser) {
-        this.parser = options.parser;
-      }
-      if (options?.promptArguments) {
-        this.setPromptArguments(options.promptArguments);
-      }
-    }
+      options.fileSerializationFormat ?? FileSerializationFormat.JSON;
   }
 
-  private validatePromptOrMessagesTemplate(
+  static unsafeCreate(
+    name: string,
+    options: AbstractPromptFactoryOptions,
+  ): AbstractPromptFactory {
+    return new AbstractPromptFactory(name, options);
+  }
+
+  _getPromptTemplate(): string | undefined {
+    return this.promptTemplate;
+  }
+
+  _getMessagesTemplate(): Array<ChatCompletionParameter> | undefined {
+    return this.messagesTemplate;
+  }
+
+  protected validatePromptOrMessagesTemplate(
     template: string | Array<ChatCompletionParameter>,
     promptArguments: PromptArguments,
     parser: PromptParser,
@@ -89,14 +73,6 @@ export class PromptFactory {
     return hydratedTemplate;
   }
 
-  setPromptTemplate(template: string): void {
-    this.promptTemplate = template;
-  }
-
-  setMessagesTemplate(template: Array<ChatCompletionParameter>): void {
-    this.messagesTemplate = template;
-  }
-
   setPromptArguments(args: PromptArguments): void {
     const template = this.promptTemplate ?? this.messagesTemplate;
     if (template !== undefined) {
@@ -104,6 +80,40 @@ export class PromptFactory {
     }
 
     this.promptArguments = args;
+  }
+
+  validate(): void {
+    const template = this.promptTemplate ?? this.messagesTemplate;
+    if (template === undefined) {
+      throw new Error('Prompt or messages template is not set');
+    }
+    this.validatePromptOrMessagesTemplate(
+      template,
+      this.promptArguments ?? {},
+      this.parser,
+    );
+  }
+}
+
+export class StringPromptFactory extends AbstractPromptFactory {
+  constructor(name: string, options: StringPromptFactoryOptions) {
+    super(name, options);
+    this.promptTemplate = options?.promptTemplate;
+  }
+
+  static async loadPromptFromFile(file: string): Promise<StringPromptFactory> {
+    const pf = await loadPromptFromFile(file);
+    if (pf instanceof StringPromptFactory) {
+      return pf;
+    }
+    throw new Error('Prompt factory is not a string prompt factory');
+  }
+
+  setPromptTemplate(template: string): void {
+    this.promptTemplate = template;
+  }
+  getPromptTemplate(): string | undefined {
+    return this.promptTemplate;
   }
 
   getHydratedPromptString(): string {
@@ -116,6 +126,31 @@ export class PromptFactory {
       this.promptArguments ?? {},
       this.parser,
     );
+  }
+}
+
+export class MessageArrayPromptFactory extends AbstractPromptFactory {
+  constructor(name: string, options: MessageArrayPromptFactoryOptions) {
+    super(name, options);
+    this.messagesTemplate = options?.messagesTemplate;
+  }
+
+  static async loadPromptFromFile(
+    file: string,
+  ): Promise<MessageArrayPromptFactory> {
+    const pf = await loadPromptFromFile(file);
+    if (pf instanceof MessageArrayPromptFactory) {
+      return pf;
+    }
+    throw new Error('Prompt factory is not a message array prompt factory');
+  }
+
+  getMessagesTemplate(): Array<ChatCompletionParameter> | undefined {
+    return this.messagesTemplate;
+  }
+
+  setMessagesTemplate(template: Array<ChatCompletionParameter>): void {
+    this.messagesTemplate = template;
   }
 
   getHydratedMessagesArray(): Array<ChatCompletionParameter> {
@@ -131,27 +166,6 @@ export class PromptFactory {
 
     return deserializeChatCompletionParameters(hydratedMessages);
   }
-
-  private validatePromptArguments(args: PromptArguments): void {
-    const template = this.promptTemplate ?? this.messagesTemplate;
-    if (template === undefined) {
-      throw new Error('Prompt or messages template is not set');
-    }
-    this.validatePromptOrMessagesTemplate(template, args, this.parser);
-  }
-
-  validatePrompt(): void {
-    if (this.promptTemplate === undefined) {
-      throw new Error('Prompt template is not set');
-    }
-
-    this.validatePromptOrMessagesTemplate(
-      this.promptTemplate,
-      this.promptArguments ?? {},
-      this.parser,
-    );
-  }
-
   getHydratedMessagesArrayAsString: () => string = () => {
     if (this.messagesTemplate === undefined) {
       throw new Error('Messages template is not set');

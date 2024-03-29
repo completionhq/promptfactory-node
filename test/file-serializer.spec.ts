@@ -6,11 +6,14 @@ import {
   loadPromptFromFile,
   savePromptToFile,
 } from '../src/file-serializer';
-import { PromptFactory } from '../src/prompt-factory';
+import {
+  AbstractPromptFactory,
+  StringPromptFactory,
+} from '../src/prompt-factory';
 import { PromptParser } from '../src/types';
 
 // Mock data for testing
-const testPromptFactory = new PromptFactory('TestFactory', {
+const testPromptFactory = new StringPromptFactory('TestFactory', {
   promptTemplate: '{arg1} {arg2}',
   promptArguments: {
     arg1: 'arg1',
@@ -92,7 +95,7 @@ describe('FileSerializer', function() {
         testFilePathJson,
         FileSerializationFormat.JSON,
       );
-      expect(loadedPromptFactory).to.be.an.instanceof(PromptFactory);
+      expect(loadedPromptFactory).to.be.an.instanceof(AbstractPromptFactory);
       expect(loadedPromptFactory.name).to.equal(testPromptFactory.name);
     });
 
@@ -101,7 +104,7 @@ describe('FileSerializer', function() {
         testFilePathYaml,
         FileSerializationFormat.YAML,
       );
-      expect(loadedPromptFactory).to.be.an.instanceof(PromptFactory);
+      expect(loadedPromptFactory).to.be.an.instanceof(AbstractPromptFactory);
       expect(loadedPromptFactory.name).to.equal(testPromptFactory.name);
     });
   });
