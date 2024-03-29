@@ -6,6 +6,7 @@ import {
   PromptParser,
 } from './types';
 import {
+  PromptSerializationFormat,
   deserializeChatCompletionParameters,
   hydrateAndValidateFStringTemplate,
   serializeChatCompletionParameters,
@@ -89,28 +90,10 @@ export class PromptFactory {
   }
 
   setPromptTemplate(template: string): void {
-    if (this.promptArguments) {
-      // Validate the prompt template if the args are set
-      this.validatePromptOrMessagesTemplate(
-        template,
-        this.promptArguments,
-        this.parser,
-      );
-    }
-
     this.promptTemplate = template;
   }
 
   setMessagesTemplate(template: Array<ChatCompletionParameter>): void {
-    if (this.promptArguments) {
-      // Validate the messages template if the args are set
-      this.validatePromptOrMessagesTemplate(
-        template,
-        this.promptArguments,
-        this.parser,
-      );
-    }
-
     this.messagesTemplate = template;
   }
 
@@ -124,18 +107,13 @@ export class PromptFactory {
   }
 
   getHydratedPromptString(): string {
-    if (this.promptArguments === undefined) {
-      throw new Error('Prompt arguments are not set');
-    }
-
-    const template = this.promptTemplate ?? this.messagesTemplate;
-    if (template === undefined) {
-      throw new Error('The prompt or messages template is not set');
+    if (this.promptTemplate === undefined) {
+      throw new Error('Prompt template is not set');
     }
 
     return this.validatePromptOrMessagesTemplate(
-      template,
-      this.promptArguments,
+      this.promptTemplate,
+      this.promptArguments ?? {},
       this.parser,
     );
   }
@@ -145,13 +123,9 @@ export class PromptFactory {
       throw new Error('Messages template is not set');
     }
 
-    if (this.promptArguments === undefined) {
-      throw new Error('Prompt arguments are not set');
-    }
-
     const hydratedMessages = this.validatePromptOrMessagesTemplate(
       this.messagesTemplate,
-      this.promptArguments,
+      this.promptArguments ?? {},
       this.parser,
     );
 
@@ -170,14 +144,32 @@ export class PromptFactory {
     if (this.promptTemplate === undefined) {
       throw new Error('Prompt template is not set');
     }
-    if (this.promptArguments === undefined) {
-      throw new Error('Prompt arguments are not set');
-    }
 
     this.validatePromptOrMessagesTemplate(
       this.promptTemplate,
-      this.promptArguments,
+      this.promptArguments ?? {},
       this.parser,
     );
   }
+
+  getHydratedMessagesArrayAsString: () => string = () => {
+    if (this.messagesTemplate === undefined) {
+      throw new Error('Messages template is not set');
+    }
+
+    const serializedPrompt = serializeChatCompletionParameters(
+      this.messagesTemplate,
+      {
+        format: PromptSerializationFormat.CUSTOM,
+        customLineDelimiter: '\n',
+        customRoleDelimiter: ': ',
+        customNameDelimiter: ' ',
+      },
+    );
+
+    return hydrateAndValidateFStringTemplate(
+      serializedPrompt,
+      this.promptArguments ?? {},
+    );
+  };
 }

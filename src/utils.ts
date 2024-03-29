@@ -60,7 +60,7 @@ export const serializeChatCompletionParameters = (
     customLineDelimiter?: string;
     customNameDelimiter?: string;
   } = {
-    format: PromptSerializationFormat.CUSTOM,
+    format: PromptSerializationFormat.JSON,
     customRoleDelimiter: DEFAULT_ROLE_DELIMITER,
     customLineDelimiter: DEFAULT_LINE_DELIMITER,
     customNameDelimiter: DEFAULT_NAME_DELIMITER,
@@ -105,7 +105,7 @@ export const deserializeChatCompletionParameters = (
     customLineDelimiter?: string;
     customNameDelimiter?: string;
   } = {
-    format: PromptSerializationFormat.CUSTOM,
+    format: PromptSerializationFormat.JSON,
     customRoleDelimiter: DEFAULT_ROLE_DELIMITER,
     customLineDelimiter: DEFAULT_LINE_DELIMITER,
     customNameDelimiter: DEFAULT_NAME_DELIMITER,
