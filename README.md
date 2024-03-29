@@ -43,6 +43,9 @@ const myPrompt = new PromptFactory("ExamplePrompt", {
   promptArguments: { name: "John Doe" },
 });
 
+const prompt = myPrompt.getHydratedPromptString();
+console.log(prompt); // Output: Hello, John Doe! How can I assist you today?
+
 // Or use messages
 
 const myPrompt = new PromptFactory("ExamplePrompt", {
@@ -55,13 +58,7 @@ const myPrompt = new PromptFactory("ExamplePrompt", {
   promptArguments: { name: "John Doe" },
 });
 
-
-const prompt = myPrompt.getHydratedPromptString();
-console.log(prompt); // Output: Hello, John Doe! How can I assist you today?
-
-// Or use messages
-
-const messages = myPrompt.hydrateMessagesTemplate();
+const messages = myPrompt.getHydratedMessagesArray();
 console.log(messages); // Output: [{ role: 'system', content: 'Hello, John Doe! How can I assist you today?' }]
 
 ```
