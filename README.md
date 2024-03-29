@@ -56,7 +56,7 @@ const myPrompt = new PromptFactory("ExamplePrompt", {
 });
 
 
-const prompt = myPrompt.hydratePromptTemplate();
+const prompt = myPrompt.getHydratedPromptString();
 console.log(prompt); // Output: Hello, John Doe! How can I assist you today?
 
 // Or use messages

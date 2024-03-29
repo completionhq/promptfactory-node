@@ -34,7 +34,7 @@ describe('PromptFactory', function() {
     });
   });
 
-  describe('hydratePromptTemplate', function() {
+  describe('getHydratedPromptString', function() {
     it('should correctly hydrate the prompt template', function() {
       const factory = new PromptFactory('test', {
         promptTemplate: 'Hello, {name}!',
