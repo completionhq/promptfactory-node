@@ -1,3 +1,4 @@
+import { ChatCompletionMessageParam } from 'openai/resources';
 import { FileSerializationFormat } from './file-serializer';
 
 export enum PromptParser {
@@ -14,8 +15,4 @@ export interface PromptOptions {
   fileSerializationFormat?: FileSerializationFormat;
 }
 
-export type ChatCompletionParameter = {
-  role: string;
-  content: string;
-  name?: string;
-};
+export type ChatCompletionParameter = ChatCompletionMessageParam;

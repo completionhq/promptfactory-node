@@ -41,7 +41,8 @@
   },
   "dependencies": {
     "@types/node": ">=8.1.0",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "openai": "^4.30.0"
   },
   "scripts": {
     "build": "yarn build-esm && yarn build-cjs",

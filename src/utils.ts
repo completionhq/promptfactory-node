@@ -45,6 +45,12 @@ export const DEFAULT_ROLE_DELIMITER = '=>>';
 
 export const DEFAULT_NAME_DELIMITER = '$$';
 
+export function hasName(
+  param: ChatCompletionParameter,
+): param is ChatCompletionParameter & { name: string } {
+  return 'name' in param && typeof param.name === 'string';
+}
+
 // Serializer function with options for format and custom delimiters
 export const serializeChatCompletionParameters = (
   messages: Array<ChatCompletionParameter>,
@@ -80,10 +86,9 @@ export const serializeChatCompletionParameters = (
 
     return messages
       .map(param => {
-        const serializedRoleAndName =
-          param.name !== undefined
-            ? `${param.role}${nameDelimiter}${param.name}${roleDelimiter}`
-            : `${param.role}${roleDelimiter}`;
+        const serializedRoleAndName = hasName(param)
+          ? `${param.role}${nameDelimiter}${param.name}${roleDelimiter}`
+          : `${param.role}${roleDelimiter}`;
         const serializedMessage = `${serializedRoleAndName}${param.content}`;
         return serializedMessage;
       })
@@ -145,7 +150,7 @@ export const deserializeChatCompletionParameters = (
             'Role or content is missing in one of the parameters.',
           );
         }
-        return { role, content, name };
+        return { role, content, name } as ChatCompletionParameter;
       } else {
         const role = param.substring(0, delimiterIndex);
         const content = param.substring(delimiterIndex + roleDelimiter.length);
@@ -155,7 +160,7 @@ export const deserializeChatCompletionParameters = (
             'Role or content is missing in one of the parameters.',
           );
         }
-        return { role, content };
+        return { role, content } as ChatCompletionParameter;
       }
     });
   }

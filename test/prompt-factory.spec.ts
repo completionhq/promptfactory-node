@@ -40,14 +40,22 @@ describe('PromptFactory', function() {
         promptTemplate: 'Hello, {name}!',
         promptArguments: { name: 'John Doe' },
       });
-      const hydratedTemplate = factory.hydratePromptTemplate();
+      const hydratedTemplate = factory.getHydratedPromptString();
       expect(hydratedTemplate).to.equal('Hello, John Doe!');
     });
 
-    it('should throw error if prompt template or arguments are not set', function() {
+    it('should throw error if prompt arguments are not set', function() {
       const factory = new PromptFactory('test');
-      expect(() => factory.hydratePromptTemplate()).to.throw(
-        'Prompt template is not set',
+      expect(() => factory.getHydratedPromptString()).to.throw(
+        'Prompt arguments are not set',
+      );
+    });
+    it('should throw error if prompt template is not set', function() {
+      const factory = new PromptFactory('test', {
+        promptArguments: { name: 'John Doe' },
+      });
+      expect(() => factory.getHydratedPromptString()).to.throw(
+        'The prompt or messages template is not set',
       );
     });
   });
