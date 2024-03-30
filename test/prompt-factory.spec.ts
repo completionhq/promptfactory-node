@@ -2,16 +2,16 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { FileSerializationFormat } from '../src/file-serializer';
 import {
-  AbstractPromptFactory,
-  MessageArrayPromptFactory,
-  StringPromptFactory,
+  AbstractPrompt,
+  MessageArrayPrompt,
+  StringPrompt,
 } from '../src/prompt-factory';
 import { PromptParser } from '../src/types';
 
 describe('PromptFactory ', function() {
   describe('AbstractPromptFactory', function() {
     it('initializes with defaults when no options are provided', function() {
-      const factory = AbstractPromptFactory.unsafeCreate('defaultTest', {});
+      const factory = AbstractPrompt._unsafeCreate('defaultTest', {});
       expect(factory.name).to.equal('defaultTest');
       expect(factory.parser).to.equal(PromptParser.FString);
       expect(factory.fileSerializationFormat).to.equal(
@@ -22,20 +22,19 @@ describe('PromptFactory ', function() {
 
   describe('StringPromptFactory', function() {
     it('inherits and extends AbstractPromptFactory correctly', function() {
-      const factory = new StringPromptFactory('stringTest', {
-        promptTemplate: 'Hello, {name}!',
+      const factory = new StringPrompt('stringTest', {
+        template: 'Hello, {{{name}}}!',
+        promptArguments: { name: 'John' },
       });
       expect(factory.name).to.equal('stringTest');
-      expect(factory.getPromptTemplate()).to.equal('Hello, {name}!');
+      expect(factory.hydrate()).to.equal('Hello, {John}!');
     });
   });
 
   describe('MessageArrayPromptFactory', function() {
     it('sets and gets messages template correctly', function() {
-      const factory = new MessageArrayPromptFactory('messagesTest', {
-        messagesTemplate: [
-          { role: 'user', content: 'Hi there, {name}!' } as const,
-        ],
+      const factory = new MessageArrayPrompt('messagesTest', {
+        template: [{ role: 'user', content: 'Hi there, {name}!' } as const],
       });
       const newTemplate = [
         { role: 'assistant', content: 'Hello, {name}!' } as const,
@@ -45,17 +44,17 @@ describe('PromptFactory ', function() {
     });
 
     it('hydrates messages array with arguments', function() {
-      const factory = new MessageArrayPromptFactory('hydrateMessagesTest', {
-        messagesTemplate: [{ role: 'user', content: 'Hi, {name}!' }],
+      const factory = new MessageArrayPrompt('hydrateMessagesTest', {
+        template: [{ role: 'user', content: 'Hi, {name}!' }],
         promptArguments: { name: 'Jane' },
       });
-      const result = factory.getHydratedMessagesArray();
+      const result = factory.hydrate();
       expect(result).to.deep.equal([{ role: 'user', content: 'Hi, Jane!' }]);
     });
 
     it('serializes and hydrates messages template into a string', function() {
-      const factory = new MessageArrayPromptFactory('serializeTest', {
-        messagesTemplate: [
+      const factory = new MessageArrayPrompt('serializeTest', {
+        template: [
           { role: 'user', content: 'Hello, {name}!' } as const,
           {
             role: 'assistant',
@@ -64,7 +63,7 @@ describe('PromptFactory ', function() {
         ],
         promptArguments: { name: 'John Doe' },
       });
-      const result = factory.getHydratedMessagesArrayAsString();
+      const result = factory.hydrateAsString();
       expect(result).to.equal(
         'user: Hello, John Doe!\nassistant: How can I help you, John Doe?',
       );
@@ -86,44 +85,58 @@ describe('PromptFactory ', function() {
 
     it('StringPromptFactory loads prompt from file correctly', async function() {
       // Mock the `loadPromptFromFile` function to return a specific result
-      const mockPromptFactoryResult = new StringPromptFactory(
-        'mockStringFactory',
-        {
-          promptTemplate: 'Mock template',
-        },
-      );
+      const mockPromptFactoryResult = new StringPrompt('mockStringFactory', {
+        template: 'Mock template',
+      });
       sandbox
-        .stub(StringPromptFactory, 'loadPromptFromFile')
+        .stub(StringPrompt, 'loadPromptFromFile')
         .resolves(mockPromptFactoryResult);
 
-      const factory = await StringPromptFactory.loadPromptFromFile(
+      const factory = await StringPrompt.loadPromptFromFile(
         'path/to/mock/file',
       );
-      expect(factory).to.be.instanceOf(StringPromptFactory);
-      expect(factory.getPromptTemplate()).to.equal('Mock template');
+      expect(factory).to.be.instanceOf(StringPrompt);
+      expect(factory.hydrate()).to.equal('Mock template');
     });
 
     it('MessageArrayPromptFactory loads prompt from file correctly', async function() {
       // Mock the `loadPromptFromFile` function to return a specific result
-      const mockPromptFactoryResult = new MessageArrayPromptFactory(
+      const mockPromptFactoryResult = new MessageArrayPrompt(
         'mockMessageArrayFactory',
         {
-          messagesTemplate: [{ role: 'user', content: 'Mock message' }],
+          template: [{ role: 'user', content: 'Mock message' }],
         },
       );
       sandbox
-        .stub(MessageArrayPromptFactory, 'loadPromptFromFile')
+        .stub(MessageArrayPrompt, 'loadPromptFromFile')
         .resolves(mockPromptFactoryResult);
 
-      const factory = await MessageArrayPromptFactory.loadPromptFromFile(
+      const factory = await MessageArrayPrompt.loadPromptFromFile(
         'path/to/mock/file',
       );
-      expect(factory).to.be.instanceOf(MessageArrayPromptFactory);
+      expect(factory).to.be.instanceOf(MessageArrayPrompt);
       expect(factory.getMessagesTemplate()).to.deep.equal([
         { role: 'user', content: 'Mock message' },
       ]);
     });
 
-    // Additional tests can be added here
+    // set prompt arguments
+    it('StringPromptFactory sets prompt arguments correctly', function() {
+      const factory = new StringPrompt('stringTest', {
+        template: 'Hello, {{{name}}}!',
+      });
+      factory.setPromptArguments({ name: 'John' });
+      expect(factory.promptArguments).to.deep.equal({ name: 'John' });
+    });
+
+    // upsert prompt arguments
+    it('StringPromptFactory upserts prompt arguments correctly', function() {
+      const factory = new StringPrompt('stringTest', {
+        template: 'Hello, {{{name}}}!',
+        promptArguments: { name: 'John' },
+      });
+      factory.upsertPromptArguments({ name: 'Jane' });
+      expect(factory.promptArguments).to.deep.equal({ name: 'Jane' });
+    });
   });
 });

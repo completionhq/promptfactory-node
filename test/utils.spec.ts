@@ -61,15 +61,13 @@ describe('Utilities', () => {
       );
     });
 
-    it('should throw an error if promptArgs contains more variables than templateStr', () => {
+    it('should handle the case if promptArgs contains more variables than templateStr gracefully', () => {
       const template = 'Hello, {name}!';
       const args = { name: 'Charlie', age: 30 }; // 'age' is not used
-      assert.throws(
-        () => {
-          hydrateAndValidateFStringTemplate(template, args);
-        },
-        Error,
-        'promptArgs contains more variables than templateStr.',
+      const expected = 'Hello, Charlie!';
+      assert.strictEqual(
+        hydrateAndValidateFStringTemplate(template, args),
+        expected,
       );
     });
 

@@ -26,11 +26,6 @@ export const hydrateAndValidateFStringTemplate = (
     }
   });
 
-  // Check if there are more variables in promptArgs than in templateStr
-  if (Object.keys(promptArgs).length > foundVariables.size) {
-    throw new Error('promptArgs contains more variables than templateStr.');
-  }
-
   return replacedStr;
 };
 
@@ -165,3 +160,35 @@ export const deserializeChatCompletionParameters = (
     });
   }
 };
+
+// Converts camelCase strings to snake_case
+export function toSnakeCase(str: string): string {
+  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+}
+
+// Converts snake_case strings to camelCase
+export function toCamelCase(str: string): string {
+  return str.replace(/(_[a-z])/g, group =>
+    group.toUpperCase().replace('_', ''),
+  );
+}
+
+// Converts object keys to snake_case
+export function keysToSnakeCase(
+  obj: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.entries(obj).reduce((acc, [key, value]) => {
+    acc[toSnakeCase(key)] = value;
+    return acc;
+  }, {} as Record<string, unknown>);
+}
+
+// Converts object keys to camelCase
+export function keysToCamelCase(
+  obj: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.entries(obj).reduce((acc, [key, value]) => {
+    acc[toCamelCase(key)] = value;
+    return acc;
+  }, {} as Record<string, unknown>);
+}
