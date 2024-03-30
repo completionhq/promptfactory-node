@@ -98,11 +98,8 @@ export class AbstractPrompt {
 }
 
 export class StringPrompt extends AbstractPrompt {
-  constructor(name: string, options: StringPromptOptions) {
+  constructor(name: string, options?: StringPromptOptions) {
     super(name, options);
-    if (typeof options.template !== 'string') {
-      throw new Error('Prompt template must be a string');
-    }
     this.template = options?.template;
   }
 
@@ -142,11 +139,8 @@ export class StringPrompt extends AbstractPrompt {
 }
 
 export class MessageArrayPrompt extends AbstractPrompt {
-  constructor(name: string, options: MessageArrayPromptOptions) {
+  constructor(name: string, options?: MessageArrayPromptOptions) {
     super(name, options);
-    if (!Array.isArray(options.template)) {
-      throw new Error('Messages template must be an array');
-    }
     this.template = options?.template;
   }
 

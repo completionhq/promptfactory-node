@@ -248,6 +248,44 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@completionhq/promptfactory-node@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@completionhq/promptfactory-node@workspace:."
+  dependencies:
+    "@types/chai": "npm:^4.3.4"
+    "@types/chai-as-promised": "npm:^7.1.5"
+    "@types/eslint": "npm:^8"
+    "@types/js-yaml": "npm:^4"
+    "@types/mocha": "npm:^10.0.6"
+    "@types/node": "npm:>=8.1.0"
+    "@types/qs": "npm:^6.9.7"
+    "@types/sinon": "npm:^17"
+    "@typescript-eslint/eslint-plugin": "npm:^7.4.0"
+    "@typescript-eslint/parser": "npm:^7.4.0"
+    chai: "npm:^4.3.6"
+    chai-as-promised: "npm:~7.1.1"
+    eslint: "npm:^8.57.0"
+    eslint-config-prettier: "npm:^8.5.0"
+    eslint-plugin-chai-friendly: "npm:^0.7.2"
+    eslint-plugin-import: "npm:^2.28"
+    eslint-plugin-prettier: "npm:^3.4.1"
+    husky: "npm:^9.0.11"
+    js-yaml: "npm:^4.1.0"
+    lint-staged: "npm:^15.2.2"
+    mocha: "npm:^8.4.0"
+    mocha-junit-reporter: "npm:^2.1.0"
+    nock: "npm:^13.2.9"
+    node-fetch: "npm:^2.6.7"
+    nyc: "npm:^15.1.0"
+    openai: "npm:^4.30.0"
+    pkgroll: "npm:^2.0.2"
+    prettier: "npm:^1.16.4"
+    sinon: "npm:^17.0.1"
+    ts-node: "npm:^10.9.1"
+    typescript: "npm:^4.9.4"
+  languageName: unknown
+  linkType: soft
+
 "@cspotcode/source-map-support@npm:^0.8.0":
   version: 0.8.1
   resolution: "@cspotcode/source-map-support@npm:0.8.1"
@@ -4821,44 +4859,6 @@ __metadata:
   checksum: 10c0/9c7045a1a2928094b5b9b15336dcd2a7b1c052f674550df63cc3f36cd44028e5080448175b6f6ca32b642de81150f5e7b1a98b728f15cb069f2dd60ac2616b96
   languageName: node
   linkType: hard
-
-"promptfactory-node@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "promptfactory-node@workspace:."
-  dependencies:
-    "@types/chai": "npm:^4.3.4"
-    "@types/chai-as-promised": "npm:^7.1.5"
-    "@types/eslint": "npm:^8"
-    "@types/js-yaml": "npm:^4"
-    "@types/mocha": "npm:^10.0.6"
-    "@types/node": "npm:>=8.1.0"
-    "@types/qs": "npm:^6.9.7"
-    "@types/sinon": "npm:^17"
-    "@typescript-eslint/eslint-plugin": "npm:^7.4.0"
-    "@typescript-eslint/parser": "npm:^7.4.0"
-    chai: "npm:^4.3.6"
-    chai-as-promised: "npm:~7.1.1"
-    eslint: "npm:^8.57.0"
-    eslint-config-prettier: "npm:^8.5.0"
-    eslint-plugin-chai-friendly: "npm:^0.7.2"
-    eslint-plugin-import: "npm:^2.28"
-    eslint-plugin-prettier: "npm:^3.4.1"
-    husky: "npm:^9.0.11"
-    js-yaml: "npm:^4.1.0"
-    lint-staged: "npm:^15.2.2"
-    mocha: "npm:^8.4.0"
-    mocha-junit-reporter: "npm:^2.1.0"
-    nock: "npm:^13.2.9"
-    node-fetch: "npm:^2.6.7"
-    nyc: "npm:^15.1.0"
-    openai: "npm:^4.30.0"
-    pkgroll: "npm:^2.0.2"
-    prettier: "npm:^1.16.4"
-    sinon: "npm:^17.0.1"
-    ts-node: "npm:^10.9.1"
-    typescript: "npm:^4.9.4"
-  languageName: unknown
-  linkType: soft
 
 "propagate@npm:^2.0.0":
   version: 2.0.1

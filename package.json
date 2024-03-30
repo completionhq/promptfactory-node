@@ -1,5 +1,5 @@
 {
-  "name": "promptfactory-node",
+  "name": "@completionhq/promptfactory-node",
   "version": "0.0.1",
   "description": "The PromptFactory Node SDK is a fast and lightweight to create and manage prompts for your LLM application.",
   "author": "Completion Team <help@completionhq.com>",
@@ -11,7 +11,6 @@
     "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",
     "@types/eslint": "^8",
-    
     "@types/mocha": "^10.0.6",
     "@types/qs": "^6.9.7",
     "@types/sinon": "^17",
@@ -25,6 +24,7 @@
     "eslint-plugin-import": "^2.28",
     "eslint-plugin-prettier": "^3.4.1",
     "husky": "^9.0.11",
+    "js-yaml": "^4.1.0",
     "lint-staged": "^15.2.2",
     "mocha": "^8.4.0",
     "mocha-junit-reporter": "^2.1.0",
@@ -35,17 +35,15 @@
     "prettier": "^1.16.4",
     "sinon": "^17.0.1",
     "ts-node": "^10.9.1",
-    "typescript": "^4.9.4",
-    "js-yaml": "^4.1.0"
+    "typescript": "^4.9.4"
   },
   "resolutions": {
     "minimist": "1.2.6",
     "nanoid": "^3.2.0"
   },
   "dependencies": {
-    "@types/node": ">=8.1.0",
-    
     "@types/js-yaml": "^4",
+    "@types/node": ">=8.1.0",
     "openai": "^4.30.0"
   },
   "scripts": {

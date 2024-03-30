@@ -20,11 +20,11 @@ The PromptFactory library provides a robust, efficient, and language-independent
 Install the PromptFactory library using npm or yarn:
 
 ```bash
-npm install promptfactory-node
+npm install @completionhq/promptfactory-node
 
 # or
 
-yarn add promptfactory-node
+yarn add @completionhq/promptfactory-node
 ```
 
 ## Usage
@@ -35,7 +35,7 @@ Below are examples demonstrating how to use PromptFactory for creating and utili
 
 ```javascript
 // Import required classes and types
-import { StringPrompt, MessageArrayPrompt } from 'promptfactory-node'; // Assuming the classes are exported from 'promptClasses.js'
+import { StringPrompt, MessageArrayPrompt } from '@completionhq/promptfactory-node'; // Assuming the classes are exported from 'promptClasses.js'
 
 // Create a StringPrompt instance
 const stringPrompt = new StringPrompt("ExamplePrompt", {
