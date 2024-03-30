@@ -34,27 +34,53 @@ Below are examples demonstrating how to use PromptFactory for creating and utili
 ### Basic Prompt Creation
 
 ```javascript
-const { StringPromptFactory, MessageArrayPromptFactory } = require('promptfactory-node');
+// Import required classes and types
+import { StringPrompt, MessageArrayPrompt } from './promptClasses'; // Assuming the classes are exported from 'promptClasses.js'
 
-// Creating a string prompt
-const stringPrompt = new StringPromptFactory("GreetingPrompt", {
-  promptTemplate: "Hello, {{name}}! How can I assist you today?",
+// Create a StringPrompt instance
+const stringPrompt = new StringPrompt("ExamplePrompt", {
+  template: "Hello, {{name}}! How can I assist you today?",
   promptArguments: { name: "John Doe" },
 });
 
-console.log(stringPrompt.getHydratedPromptString());
-// Output: Hello, John Doe! How can I assist you today?
+// Or set the template and arguments separately
+stringPrompt.setTemplate("Hello, {{name}}! How can I assist you today?");
+stringPrompt.setArguments({ name: "John Doe" });
 
-// Creating a message array prompt
-const messagePrompt = new MessageArrayPromptFactory("AssistancePrompt", {
-  messagesTemplate: [
-    { role: "system", content: "Hello, {{name}}! How can I assist you today?" }
+// Hydrate the string template to produce the final prompt
+const hydratedStringPrompt = stringPrompt.hydrate();
+console.log(hydratedStringPrompt); // Output: Hello, John Doe! How can I assist you today?
+
+```
+
+### Basic Message Array Prompt Creation (OpenAI / Chat Completion format)
+
+```javascript
+// Create a MessageArrayPrompt instance
+const messageArrayPrompt = new MessageArrayPrompt("ExamplePrompt", {
+  template: [
+    {
+      role: "system",
+      content: "Hello, {{name}}! How can I assist you today?",
+    }
   ],
   promptArguments: { name: "John Doe" },
 });
 
-console.log(messagePrompt.getHydratedMessagesArray());
-// Output: [{ role: 'system', content: 'Hello, John Doe! How can I assist you today?' }]
+// Or set the template and arguments separately
+messageArrayPrompt.setTemplate([
+  {
+    role: "system",
+    content: "Hello, {{name}}! How can I assist you today?",
+  }
+]);
+messageArrayPrompt.setArguments({ name: "John Doe" });
+
+// Hydrate the message array template to produce the final array of messages
+const hydratedMessages = messageArrayPrompt.hydrate();
+console.log(hydratedMessages); // Output: [{ role: 'system', content: 'Hello, John Doe! How can I assist you today?' }]
+
+// For serialization and deserialization, refer to the utilities provided in the new interfaces
 ```
 
 ### Integration with OpenAI
