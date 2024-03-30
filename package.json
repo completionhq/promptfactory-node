@@ -7,12 +7,11 @@
   "engines": {
     "node": ">=12.*"
   },
-  "main": "cjs/promptfactory.cjs.node.js",
   "devDependencies": {
     "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",
     "@types/eslint": "^8",
-    "@types/js-yaml": "^4",
+    
     "@types/mocha": "^10.0.6",
     "@types/qs": "^6.9.7",
     "@types/sinon": "^17",
@@ -32,10 +31,12 @@
     "nock": "^13.2.9",
     "node-fetch": "^2.6.7",
     "nyc": "^15.1.0",
+    "pkgroll": "^2.0.2",
     "prettier": "^1.16.4",
     "sinon": "^17.0.1",
     "ts-node": "^10.9.1",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.4",
+    "js-yaml": "^4.1.0"
   },
   "resolutions": {
     "minimist": "1.2.6",
@@ -43,13 +44,12 @@
   },
   "dependencies": {
     "@types/node": ">=8.1.0",
-    "js-yaml": "^4.1.0",
+    
+    "@types/js-yaml": "^4",
     "openai": "^4.30.0"
   },
   "scripts": {
-    "build": "yarn build-esm && yarn build-cjs",
-    "build-esm": "mkdir -p esm && tsc -p tsconfig.esm.json && echo '{\"type\":\"module\"}' > esm/package.json",
-    "build-cjs": "mkdir -p cjs && tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > cjs/package.json",
+    "build": "pkgroll",
     "clean": "rm -rf ./.nyc_output ./node_modules/.cache ./coverage ./esm ./cjs",
     "prepack": "yarn install && yarn build",
     "mocha": "nyc mocha --verbose",
@@ -61,18 +61,17 @@
     "coveralls": "cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
     "prepare": "husky"
   },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "exports": {
-    "browser": {
-      "import": "./esm/promptfactory.esm.worker.js",
-      "require": "./cjs/promptfactory.cjs.worker.js"
+    "require": {
+      "types": "./dist/index.d.cts",
+      "default": "./dist/index.cjs"
     },
-    "deno": {
-      "import": "./esm/promptfactory.esm.worker.js",
-      "require": "./cjs/promptfactory.cjs.worker.js"
-    },
-    "default": {
-      "import": "./esm/promptfactory.esm.node.js",
-      "require": "./cjs/promptfactory.cjs.node.js"
+    "import": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
     }
   },
   "packageManager": "yarn@4.1.1"
