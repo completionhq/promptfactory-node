@@ -1,95 +1,123 @@
-# PromptFactory
+# PromptFactory Library
 
-We built PromptFactory to create a fast, simple, and language-agnostic interface for managing prompts in code (tailored for LLMs and text-to-image models). We wanted something between a project like LangChain and a simple string template. PromptFactory is a minimalistic library that allows you to create prompts with ease, validate arguments, and generate hydrated templates for your prompts.
+The PromptFactory library provides a robust, efficient, and language-independent solution for constructing and managing prompt templates for use with various AI models, including but not limited to LLMs (Large Language Models) and text-to-image models. It bridges the gap between complex project structures like LangChain and straightforward string templating approaches, offering a streamlined and developer-friendly toolset for prompt management.
 
-## Goals
+## Key Objectives
 
-- Fast, simple, and language-agnostic interface for managing prompts in code.
-- Minimal dependencies.
-- Model agnostic (works with any model that accepts text or messages prompts): OpenAI, Mistral, Llama, etc.
-- Tailored to work with LLMs and text-to-image models.
+- **Efficiency and Simplicity:** Offer a rapid and straightforward interface for prompt management within software projects, without the need for extensive dependencies.
+- **Model Compatibility:** Ensure compatibility with a wide range of AI models, including OpenAI, Mistral, Llama, etc., facilitating easy integration and flexibility in usage.
+- **Developer-Focused:** Design with a focus on developer needs, allowing for prompt customization, argument validation, and easy storage and versioning of prompt templates within code repositories.
 
 ## Features
 
-- Create prompts with ease.
-- Support argument validation.
-- Focused on developers and teams that want to save their prompts in code and version control.
-- Easily generate hydrated templates for your prompts.
-
+- **Ease of Use:** Intuitive API for prompt creation and management, supporting both simple and complex prompt configurations.
+- **Argument Validation:** Built-in support for validating and hydrating prompt arguments, ensuring dynamic prompts are generated accurately.
+- **Model Agnostic:** Works seamlessly with any AI model accepting text or structured message prompts.
+- **Versatile Prompt Management:** Allows for the storage of prompt templates and arguments in code, simplifying version control and collaboration.
 
 ## Installation
 
+Install the PromptFactory library using npm or yarn:
+
 ```bash
-npm install promptfactory-node
+npm install @completionhq/promptfactory-node
 
 # or
 
-yarn add promptfactory-node
-
+yarn add @completionhq/promptfactory-node
 ```
 
 ## Usage
 
+Below are examples demonstrating how to use PromptFactory for creating and utilizing prompts.
+
+### Basic Prompt Creation
+
 ```javascript
+// Import required classes and types
+import { StringPrompt, MessageArrayPrompt } from '@completionhq/promptfactory-node'; // Assuming the classes are exported from 'promptClasses.js'
 
-const { PromptFactory } = require('promptfactory-node');
-
-const promptFactory = new PromptFactory();
- 
-// Define a prompt
-
-const myPrompt = new PromptFactory("ExamplePrompt", {
-  promptTemplate: "Hello, {{name}}! How can I assist you today?",
+// Create a StringPrompt instance
+const stringPrompt = new StringPrompt("ExamplePrompt", {
+  template: "Hello, {{name}}! How can I assist you today?",
   promptArguments: { name: "John Doe" },
 });
 
-const prompt = myPrompt.getHydratedPromptString();
-console.log(prompt); // Output: Hello, John Doe! How can I assist you today?
+// Or set the template and arguments separately
+stringPrompt.setTemplate("Hello, {{name}}! How can I assist you today?");
+stringPrompt.setArguments({ name: "John Doe" });
 
-// Or use messages
+// Hydrate the string template to produce the final prompt
+const hydratedStringPrompt = stringPrompt.hydrate();
+console.log(hydratedStringPrompt); // Output: Hello, John Doe! How can I assist you today?
 
-const myPrompt = new PromptFactory("ExamplePrompt", {
-  messagesTemplate: [
+```
+
+### Basic Message Array Prompt Creation (OpenAI / Chat Completion format)
+
+```javascript
+// Create a MessageArrayPrompt instance
+const messageArrayPrompt = new MessageArrayPrompt("ExamplePrompt", {
+  template: [
     {
       role: "system",
       content: "Hello, {{name}}! How can I assist you today?",
-    },
+    }
   ],
   promptArguments: { name: "John Doe" },
 });
 
-const messages = myPrompt.getHydratedMessagesArray();
-console.log(messages); // Output: [{ role: 'system', content: 'Hello, John Doe! How can I assist you today?' }]
+// Or set the template and arguments separately
+messageArrayPrompt.setTemplate([
+  {
+    role: "system",
+    content: "Hello, {{name}}! How can I assist you today?",
+  }
+]);
+messageArrayPrompt.setArguments({ name: "John Doe" });
 
+// Hydrate the message array template to produce the final array of messages
+const hydratedMessages = messageArrayPrompt.hydrate();
+console.log(hydratedMessages); // Output: [{ role: 'system', content: 'Hello, John Doe! How can I assist you today?' }]
+
+// For serialization and deserialization, refer to the utilities provided in the new interfaces
 ```
 
-### Example with OpenAI
+### Integration with OpenAI
 
 ```javascript
-async function fetchCompletion(prompt) {
-  const response = await openai.createCompletion({
-    model: "text-davinci-003",
-    prompt: prompt,
-    max_tokens: 50,
-  });
-  return response.data.choices[0].text.trim();
-}
+import { OpenAI } from 'openai-node';
 
-const responseText = await fetchCompletion(dynamicPrompt);
-console.log(responseText);
+const prompt = new MessageArrayPromptFactory("OpenAIPrompt", {
+  messagesTemplate: [
+    { role: "system", content: "Hello, {{name}}! How can I assist you today?" }
+  ],
+  promptArguments: { name: "John Doe" },
+});
 
+const openai = new OpenAI({
+  apiKey: config.openaiApiKey,
+});
+const result = await openai.chat.completions.create({
+  model: 'gpt-3.5-turbo',
+  messages: prompt.getHydratedMessagesArray(),
+});
+
+console.log(result.choices[0].message.content);
 ```
 
-### Configuration
+### Configuration Options
 
-PromptFactory can be configured with several options to tailor its behavior to your needs. Here are some of the key configuration options:
+Customize the behavior of PromptFactory with various configuration options:
 
-`promptTemplate`: A string template for generating prompts (cannot be used with `messagesTemplate`).
+- **`promptTemplate`**: String template for generating simple text prompts.
+- **`messagesTemplate`**: Array of chat completion parameters for creating structured message prompts.
+- **`promptArguments`**: Object containing variables to be interpolated into the prompt or messages template.
+- **`parser`**: Specifies the template parser to use, defaulting to `FString` for simple string interpolation.
+- **`fileSerializationFormat`**: Determines the format used for loading and saving prompts from/to files, with JSON as the default format.
 
-`messagesTemplate`: An array of chat completion parameters for more complex prompt structures (cannot be used with `promptTemplate`).
+## Advanced Features
 
-`promptArguments`: An object containing arguments to be replaced in the prompt template.
-
-`parser`: The parser to use for hydrating templates. Default is `FString`.
-
-`fileSerializationFormat`: The format to use when loading/saving prompt templates from/to files. Default is YAML.
+- **File-based Prompt Management**: Load and manage prompts directly from files, supporting both JSON and YAML formats for ease of use and version control.
+- **Dynamic Argument Hydration**: Seamlessly interpolate dynamic variables into prompts, ensuring accurate and contextually relevant prompt generation.
+- **Comprehensive Validation**: Utilize built-in validation mechanisms to ensure prompt templates and arguments are correctly formatted and error-free.

@@ -1,32 +1,32 @@
 import * as fs from 'fs/promises';
 import * as yaml from 'js-yaml';
-import { PromptFactory } from './prompt-factory';
+import { MessageArrayPrompt, StringPrompt } from './prompt-factory';
+import {
+  MessageArrayPromptFactoryOptions,
+  StringPromptFactoryOptions,
+} from './types';
+import { keysToCamelCase, keysToSnakeCase } from './utils';
 
 export enum FileSerializationFormat {
   YAML = 'yaml',
   JSON = 'json',
 }
-
-/**
- * Serializes and saves a PromptFactory instance to a file in JSON or YAML format.
- *
- * @param {string} filePath - The file path to save the prompt to.
- * @param {PromptFactory} promptFactory - The PromptFactory instance to serialize.
- * @param {'json' | 'yaml'} format - The format to serialize the prompt (JSON or YAML).
- */
 export async function savePromptToFile(
   filePath: string,
-  promptFactory: PromptFactory,
-  format: FileSerializationFormat,
+  promptFactory: MessageArrayPrompt | StringPrompt,
+  format: FileSerializationFormat = FileSerializationFormat.JSON,
 ): Promise<void> {
-  const objToSave = {
-    PromptFactory: 'Version 0.0.1',
+  if (promptFactory.promptArguments === undefined) {
+    throw new Error('PromptFactory: promptArguments is not set');
+  }
+
+  const objToSave = keysToSnakeCase({
+    PromptFactory: '1',
     name: promptFactory.name,
-    promptTemplate: promptFactory.promptTemplate,
-    messagesTemplate: promptFactory.messagesTemplate,
+    template: promptFactory._getRawTemplate(),
     promptArguments: promptFactory.promptArguments,
     parser: promptFactory.parser,
-  };
+  });
 
   let serializedData;
   if (format === FileSerializationFormat.JSON) {
@@ -40,54 +40,50 @@ export async function savePromptToFile(
   await fs.writeFile(filePath, serializedData);
 }
 
-/**
- * Loads a PromptFactory instance from a file in JSON or YAML format.
- *
- * @param {string} filePath - The file path to load the prompt from.
- * @param {'json' | 'yaml'} format - The format of the file content (JSON or YAML).
- * @returns {Promise<PromptFactory>} - The deserialized PromptFactory instance.
- */
 export async function loadPromptFromFile(
   filePath: string,
-  format: FileSerializationFormat,
-): Promise<PromptFactory> {
+  format: FileSerializationFormat = FileSerializationFormat.JSON,
+): Promise<MessageArrayPrompt | StringPrompt> {
   const fileContent = await fs.readFile(filePath, 'utf-8');
   let obj;
 
   if (format === FileSerializationFormat.JSON) {
-    try {
-      obj = JSON.parse(fileContent);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(
-          `PromptFactory: Failed to parse JSON: ${error.message}`,
-        );
-      }
-      throw new Error('PromptFactory: Failed to parse JSON.');
-    }
+    obj = JSON.parse(fileContent);
   } else if (format === FileSerializationFormat.YAML) {
-    try {
-      obj = yaml.load(fileContent);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(
-          `PromptFactory: Failed to parse YAML: ${error.message}`,
-        );
-      }
-      throw new Error('PromptFactory: Failed to parse YAML.');
-    }
+    obj = yaml.load(fileContent) as unknown;
   } else {
     throw new Error(
       'PromptFactory: Unsupported format. Please use "json" or "yaml".',
     );
   }
 
-  const promptFactory = new PromptFactory(obj.name, {
-    promptTemplate: obj.promptTemplate,
-    messagesTemplate: obj.messagesTemplate,
-    promptArguments: obj.promptArguments,
-    parser: obj.parser,
-  });
+  obj = keysToCamelCase(obj);
 
-  return promptFactory;
+  if (
+    typeof obj !== 'object' ||
+    !('name' in obj) ||
+    !('template' in obj) ||
+    !('promptArguments' in obj) ||
+    !('parser' in obj)
+  ) {
+    throw new Error('PromptFactory: Invalid file content.');
+  }
+
+  if ('template' in obj && typeof obj.template === 'string') {
+    return new StringPrompt(
+      obj.name as string,
+      (obj as unknown) as StringPromptFactoryOptions,
+    );
+  }
+
+  if ('promptTemplate' in obj) {
+    return new MessageArrayPrompt(
+      obj.name as string,
+      (obj as unknown) as MessageArrayPromptFactoryOptions,
+    );
+  }
+
+  throw new Error(
+    'PromptFactory: Could not find a prompt template or a messages template.',
+  );
 }

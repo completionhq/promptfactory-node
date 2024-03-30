@@ -6,12 +6,13 @@ import {
   loadPromptFromFile,
   savePromptToFile,
 } from '../src/file-serializer';
-import { PromptFactory } from '../src/prompt-factory';
+import { StringPrompt } from '../src/prompt-factory';
 import { PromptParser } from '../src/types';
+import sinon = require('sinon');
 
 // Mock data for testing
-const testPromptFactory = new PromptFactory('TestFactory', {
-  promptTemplate: '{arg1} {arg2}',
+const testStringPromptFactory = new StringPrompt('TestFactory', {
+  template: '{arg1} {arg2}',
   promptArguments: {
     arg1: 'arg1',
     arg2: 'arg2',
@@ -19,8 +20,8 @@ const testPromptFactory = new PromptFactory('TestFactory', {
   parser: PromptParser.FString,
 });
 
-const testFilePathJson = 'testPromptFactory.json';
-const testFilePathYaml = 'testPromptFactory.yaml';
+const testFilePathJson = 'testStringPromptFactory.json';
+const testFilePathYaml = 'testStringPromptFactory.yaml';
 
 // Helper function to delete test files
 const cleanUp = async (filePath: PathLike) => {
@@ -32,77 +33,142 @@ const cleanUp = async (filePath: PathLike) => {
 };
 
 describe('FileSerializer', function() {
-  describe('savePromptToFile', function() {
-    afterEach(async function() {
-      // Cleanup files after each test
-      await cleanUp(testFilePathJson);
-      await cleanUp(testFilePathYaml);
-    });
+  let readStub, writeStub;
 
-    it('should save a PromptFactory instance to a JSON file', async function() {
-      await savePromptToFile(
-        testFilePathJson,
-        testPromptFactory,
-        FileSerializationFormat.JSON,
-      );
-      const fileExists = await fs
-        .access(testFilePathJson)
-        .then(() => true)
-        .catch(() => false);
-      expect(fileExists).to.be.true;
-    });
+  before(function() {
+    // Stub the fs.readFile and fs.writeFile methods
+    readStub = sinon.stub(fs, 'readFile');
+    writeStub = sinon.stub(fs, 'writeFile');
 
-    it('should save a PromptFactory instance to a YAML file', async function() {
-      await savePromptToFile(
-        testFilePathYaml,
-        testPromptFactory,
-        FileSerializationFormat.YAML,
-      );
-      const fileExists = await fs
-        .access(testFilePathYaml)
-        .then(() => true)
-        .catch(() => false);
-      expect(fileExists).to.be.true;
-    });
+    // Setup the stub for readFile to mimic reading JSON and YAML files
+    readStub.withArgs(testFilePathJson).resolves(
+      JSON.stringify({
+        name: 'TestFactory',
+        template: '{arg1} {arg2}',
+        prompt_arguments: {
+          arg1: 'arg1',
+          arg2: 'arg2',
+        },
+        parser: 'f-string',
+      }),
+    );
+    readStub.withArgs(testFilePathYaml).resolves(`
+      name: TestFactory
+      template: '{arg1} {arg2}'
+      prompt_arguments:
+        arg1: arg1
+        arg2: arg2
+      parser: FString
+    `);
+
+    // The writeFile stub doesn't need to resolve to any specific value
+    writeStub.resolves();
+  });
+  afterEach(async function() {
+    // Cleanup files after each test
+    await cleanUp(testFilePathJson);
+    await cleanUp(testFilePathYaml);
+  });
+
+  before(async function() {
+    // Prepare test files
+    await savePromptToFile(
+      testFilePathJson,
+      testStringPromptFactory,
+      FileSerializationFormat.JSON,
+    );
+    await savePromptToFile(
+      testFilePathYaml,
+      testStringPromptFactory,
+      FileSerializationFormat.YAML,
+    );
+  });
+
+  after(async function() {
+    // Cleanup files after all tests
+    await cleanUp(testFilePathJson);
+    await cleanUp(testFilePathYaml);
   });
 
   describe('loadPromptFromFile', function() {
-    before(async function() {
-      // Prepare test files
-      await savePromptToFile(
-        testFilePathJson,
-        testPromptFactory,
-        FileSerializationFormat.JSON,
-      );
-      await savePromptToFile(
-        testFilePathYaml,
-        testPromptFactory,
-        FileSerializationFormat.YAML,
-      );
-    });
-
-    after(async function() {
-      // Cleanup files after all tests
-      await cleanUp(testFilePathJson);
-      await cleanUp(testFilePathYaml);
-    });
-
-    it('should load a PromptFactory instance from a JSON file', async function() {
+    it('should load a StringPrompt instance from a JSON file with camelCase properties', async function() {
       const loadedPromptFactory = await loadPromptFromFile(
         testFilePathJson,
         FileSerializationFormat.JSON,
       );
-      expect(loadedPromptFactory).to.be.an.instanceof(PromptFactory);
-      expect(loadedPromptFactory.name).to.equal(testPromptFactory.name);
+      expect(loadedPromptFactory).to.be.an.instanceof(StringPrompt);
+      expect(loadedPromptFactory.name).to.equal(testStringPromptFactory.name);
+      // Ensure properties are in camelCase as expected
+      expect(loadedPromptFactory).to.have.property('promptArguments');
+      expect(loadedPromptFactory.promptArguments).to.deep.equal({
+        arg1: 'arg1',
+        arg2: 'arg2',
+      });
     });
 
-    it('should load a PromptFactory instance from a YAML file', async function() {
+    it('should load a StringPrompt instance from a YAML file with camelCase properties', async function() {
       const loadedPromptFactory = await loadPromptFromFile(
         testFilePathYaml,
         FileSerializationFormat.YAML,
       );
-      expect(loadedPromptFactory).to.be.an.instanceof(PromptFactory);
-      expect(loadedPromptFactory.name).to.equal(testPromptFactory.name);
+      expect(loadedPromptFactory).to.be.an.instanceof(StringPrompt);
+      expect(loadedPromptFactory.name).to.equal(testStringPromptFactory.name);
+      // Ensure properties are in camelCase as expected
+      expect(loadedPromptFactory).to.have.property('promptArguments');
+      expect(loadedPromptFactory.promptArguments).to.deep.equal({
+        arg1: 'arg1',
+        arg2: 'arg2',
+      });
+    });
+
+    // Save the file
+    it('should save a StringPrompt instance to a JSON file', async function() {
+      await savePromptToFile(
+        testFilePathJson,
+        testStringPromptFactory,
+        FileSerializationFormat.JSON,
+      );
+      const loadedPromptFactory = await loadPromptFromFile(
+        testFilePathJson,
+        FileSerializationFormat.JSON,
+      );
+      expect(loadedPromptFactory).to.be.an.instanceof(StringPrompt);
+      expect(loadedPromptFactory.name).to.equal(testStringPromptFactory.name);
+      expect(loadedPromptFactory.promptArguments).to.deep.equal({
+        arg1: 'arg1',
+        arg2: 'arg2',
+      });
+    });
+
+    it('should save a StringPrompt instance to a YAML file', async function() {
+      await savePromptToFile(
+        testFilePathYaml,
+        testStringPromptFactory,
+        FileSerializationFormat.YAML,
+      );
+
+      const loadedPromptFactory = await loadPromptFromFile(
+        testFilePathYaml,
+        FileSerializationFormat.YAML,
+      );
+      expect(loadedPromptFactory).to.be.an.instanceof(StringPrompt);
+      expect(loadedPromptFactory.name).to.equal(testStringPromptFactory.name);
+      expect(loadedPromptFactory.promptArguments).to.deep.equal({
+        arg1: 'arg1',
+        arg2: 'arg2',
+      });
+    });
+
+    // Check that the file is saved as snake case
+    it('should save a StringPrompt instance to a JSON file with snake_case properties', async function() {
+      await savePromptToFile(
+        testFilePathJson,
+        testStringPromptFactory,
+        FileSerializationFormat.JSON,
+      );
+      const fileContent = await fs.readFile(testFilePathJson, 'utf-8');
+      const obj = JSON.parse(fileContent);
+      expect(obj).to.have.property('prompt_arguments');
     });
   });
 });

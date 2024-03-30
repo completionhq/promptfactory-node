@@ -1,6 +1,10 @@
-import { PromptFactory } from './prompt-factory';
+import {
+  AbstractPrompt,
+  MessageArrayPrompt,
+  StringPrompt,
+} from './prompt-factory';
 
-export { PromptFactory };
+export { AbstractPrompt, MessageArrayPrompt, StringPrompt };
 
 // Export all types
 export * from './types';
@@ -8,5 +12,3 @@ export * from './types';
 export * from './utils';
 // Export all file serialization functions
 export * from './file-serializer';
-
-export default PromptFactory;

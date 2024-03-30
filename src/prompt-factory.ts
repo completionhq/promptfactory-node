@@ -1,9 +1,11 @@
 import { FileSerializationFormat, loadPromptFromFile } from './file-serializer';
 import {
+  AbstractPromptFactoryOptions as AbstractPromptOptions,
   ChatCompletionParameter,
+  MessageArrayPromptFactoryOptions as MessageArrayPromptOptions,
   PromptArguments,
-  PromptOptions,
   PromptParser,
+  StringPromptFactoryOptions as StringPromptOptions,
 } from './types';
 import {
   PromptSerializationFormat,
@@ -12,62 +14,42 @@ import {
   serializeChatCompletionParameters,
 } from './utils';
 
-export class PromptFactory {
+export class AbstractPrompt {
   public name: string;
 
-  public promptTemplate?: string;
-  public messagesTemplate?: Array<ChatCompletionParameter>;
+  protected template?: string | Array<ChatCompletionParameter>;
 
   public promptArguments?: PromptArguments;
 
   public parser: PromptParser = PromptParser.FString;
   public fileSerializationFormat?: FileSerializationFormat;
 
-  constructor(name: string, options?: PromptOptions) {
+  protected constructor(name: string, options?: AbstractPromptOptions) {
     this.name = name;
-    this.initialize(options).catch(err => {
-      throw new Error(`PromptFactory: ${err}`);
-    });
-  }
-
-  private async initialize(options?: PromptOptions): Promise<void> {
     this.parser = options?.parser ?? PromptParser.FString;
+    this.fileSerializationFormat = options?.fileSerializationFormat;
+    this.template = options?.template;
+    this.promptArguments = options?.promptArguments;
     this.fileSerializationFormat =
-      options?.fileSerializationFormat ?? FileSerializationFormat.YAML;
-
-    if (options?.file) {
-      const pf = await loadPromptFromFile(
-        options.file,
-        this.fileSerializationFormat,
-      );
-      this.promptTemplate = pf.promptTemplate;
-      this.messagesTemplate = pf.messagesTemplate;
-      this.promptArguments = pf.promptArguments;
-      this.parser = pf.parser;
-      // Validate the prompt arguments if they are set
-      if (
-        this.promptArguments &&
-        (options.promptTemplate || options.messagesTemplate)
-      ) {
-        this.validatePromptArguments(this.promptArguments);
-      }
-    } else {
-      if (options?.promptTemplate) {
-        this.setPromptTemplate(options.promptTemplate);
-      }
-      if (options?.messagesTemplate) {
-        this.setMessagesTemplate(options.messagesTemplate);
-      }
-      if (options?.parser) {
-        this.parser = options.parser;
-      }
-      if (options?.promptArguments) {
-        this.setPromptArguments(options.promptArguments);
-      }
-    }
+      options?.fileSerializationFormat ?? FileSerializationFormat.JSON;
   }
 
-  private validatePromptOrMessagesTemplate(
+  static _unsafeCreate(
+    name: string,
+    options: AbstractPromptOptions,
+  ): AbstractPrompt {
+    return new AbstractPrompt(name, options);
+  }
+
+  _getRawTemplate(): string | Array<ChatCompletionParameter> | undefined {
+    return this.template;
+  }
+
+  _setRawTemplate(template: string | Array<ChatCompletionParameter>): void {
+    this.template = template;
+  }
+
+  protected validatePromptOrMessagesTemplate(
     template: string | Array<ChatCompletionParameter>,
     promptArguments: PromptArguments,
     parser: PromptParser,
@@ -89,16 +71,12 @@ export class PromptFactory {
     return hydratedTemplate;
   }
 
-  setPromptTemplate(template: string): void {
-    this.promptTemplate = template;
-  }
-
-  setMessagesTemplate(template: Array<ChatCompletionParameter>): void {
-    this.messagesTemplate = template;
+  upsertPromptArguments(args: PromptArguments): void {
+    this.promptArguments = { ...this.promptArguments, ...args };
   }
 
   setPromptArguments(args: PromptArguments): void {
-    const template = this.promptTemplate ?? this.messagesTemplate;
+    const template = this.template;
     if (template !== undefined) {
       this.validatePromptOrMessagesTemplate(template, args, this.parser);
     }
@@ -106,66 +84,117 @@ export class PromptFactory {
     this.promptArguments = args;
   }
 
-  getHydratedPromptString(): string {
-    if (this.promptTemplate === undefined) {
-      throw new Error('Prompt template is not set');
+  validate(): void {
+    const template = this.template;
+    if (template === undefined) {
+      throw new Error('Prompt or messages template is not set');
     }
-
-    return this.validatePromptOrMessagesTemplate(
-      this.promptTemplate,
+    this.validatePromptOrMessagesTemplate(
+      template,
       this.promptArguments ?? {},
       this.parser,
     );
   }
+}
 
-  getHydratedMessagesArray(): Array<ChatCompletionParameter> {
-    if (this.messagesTemplate === undefined) {
+export class StringPrompt extends AbstractPrompt {
+  constructor(name: string, options?: StringPromptOptions) {
+    super(name, options);
+    this.template = options?.template;
+  }
+
+  static async loadPromptFromFile(file: string): Promise<StringPrompt> {
+    const pf = await loadPromptFromFile(file);
+    if (pf instanceof StringPrompt) {
+      return pf;
+    }
+    throw new Error('Prompt factory is not a string prompt factory');
+  }
+
+  setPromptTemplate(template: string): void {
+    this.template = template;
+  }
+  getPromptTemplate(): string | undefined {
+    if (typeof this.template !== 'string') {
+      throw new Error('Prompt template is not a string');
+    }
+    return this.template;
+  }
+
+  hydrate(): string {
+    if (this.template === undefined) {
+      throw new Error('Prompt template is not set');
+    }
+
+    if (typeof this.template !== 'string') {
+      throw new Error('Prompt template is not a string');
+    }
+
+    return this.validatePromptOrMessagesTemplate(
+      this.template,
+      this.promptArguments ?? {},
+      this.parser,
+    );
+  }
+}
+
+export class MessageArrayPrompt extends AbstractPrompt {
+  constructor(name: string, options?: MessageArrayPromptOptions) {
+    super(name, options);
+    this.template = options?.template;
+  }
+
+  static async loadPromptFromFile(file: string): Promise<MessageArrayPrompt> {
+    const pf = await loadPromptFromFile(file);
+    if (pf instanceof MessageArrayPrompt) {
+      return pf;
+    }
+    throw new Error('Prompt factory is not a message array prompt factory');
+  }
+
+  getMessagesTemplate(): Array<ChatCompletionParameter> | undefined {
+    if (!Array.isArray(this.template)) {
+      throw new Error('Messages template is not an array');
+    }
+    return this.template;
+  }
+
+  setMessagesTemplate(template: Array<ChatCompletionParameter>): void {
+    this.template = template;
+  }
+
+  hydrate(): Array<ChatCompletionParameter> {
+    if (this.template === undefined) {
       throw new Error('Messages template is not set');
     }
 
+    if (!Array.isArray(this.template)) {
+      throw new Error('Messages template is not an array');
+    }
+
     const hydratedMessages = this.validatePromptOrMessagesTemplate(
-      this.messagesTemplate,
+      this.template,
       this.promptArguments ?? {},
       this.parser,
     );
 
     return deserializeChatCompletionParameters(hydratedMessages);
   }
-
-  private validatePromptArguments(args: PromptArguments): void {
-    const template = this.promptTemplate ?? this.messagesTemplate;
-    if (template === undefined) {
-      throw new Error('Prompt or messages template is not set');
-    }
-    this.validatePromptOrMessagesTemplate(template, args, this.parser);
-  }
-
-  validatePrompt(): void {
-    if (this.promptTemplate === undefined) {
-      throw new Error('Prompt template is not set');
-    }
-
-    this.validatePromptOrMessagesTemplate(
-      this.promptTemplate,
-      this.promptArguments ?? {},
-      this.parser,
-    );
-  }
-
-  getHydratedMessagesArrayAsString: () => string = () => {
-    if (this.messagesTemplate === undefined) {
+  hydrateAsString: () => string = () => {
+    if (this.template === undefined) {
       throw new Error('Messages template is not set');
     }
 
-    const serializedPrompt = serializeChatCompletionParameters(
-      this.messagesTemplate,
-      {
-        format: PromptSerializationFormat.CUSTOM,
-        customLineDelimiter: '\n',
-        customRoleDelimiter: ': ',
-        customNameDelimiter: ' ',
-      },
-    );
+    if (!Array.isArray(this.template)) {
+      throw new Error('Messages template is not an array');
+    }
+
+    const serializedPrompt = serializeChatCompletionParameters(this.template, {
+      format: PromptSerializationFormat.CUSTOM,
+      customLineDelimiter: '\n',
+      customRoleDelimiter: ': ',
+      customNameDelimiter: ' ',
+    });
 
     return hydrateAndValidateFStringTemplate(
       serializedPrompt,

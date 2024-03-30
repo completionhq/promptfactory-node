@@ -10,3 +10,4 @@ testProjects/**/node_modules
 testProjects/**/package-lock.json
 testProjects/**/_worker.*
 .yarn/install-state.gz
+dist

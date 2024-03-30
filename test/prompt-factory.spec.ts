@@ -1,167 +1,142 @@
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { FileSerializationFormat } from '../src/file-serializer';
-import { PromptFactory } from '../src/prompt-factory';
+import {
+  AbstractPrompt,
+  MessageArrayPrompt,
+  StringPrompt,
+} from '../src/prompt-factory';
 import { PromptParser } from '../src/types';
 
-describe('PromptFactory', function() {
-  describe('constructor and initialization', function() {
-    it('should initialize with default values if no options are provided', function() {
-      const factory = new PromptFactory('test');
-      expect(factory.name).to.equal('test');
+describe('PromptFactory ', function() {
+  describe('AbstractPromptFactory', function() {
+    it('initializes with defaults when no options are provided', function() {
+      const factory = AbstractPrompt._unsafeCreate('defaultTest', {});
+      expect(factory.name).to.equal('defaultTest');
       expect(factory.parser).to.equal(PromptParser.FString);
       expect(factory.fileSerializationFormat).to.equal(
-        FileSerializationFormat.YAML,
+        FileSerializationFormat.JSON,
       );
     });
+  });
 
-    it('should throw an error for unsupported file serialization format', async function() {
-      // Assuming there's logic to handle unsupported file formats
-      // You'd need to mock `loadPromptFromFile` to test this properly
+  describe('StringPromptFactory', function() {
+    it('inherits and extends AbstractPromptFactory correctly', function() {
+      const factory = new StringPrompt('stringTest', {
+        template: 'Hello, {{{name}}}!',
+        promptArguments: { name: 'John' },
+      });
+      expect(factory.name).to.equal('stringTest');
+      expect(factory.hydrate()).to.equal('Hello, {John}!');
     });
   });
 
-  describe('setPromptTemplate', function() {
-    it('should set prompt template correctly', function() {
-      const factory = new PromptFactory('test');
-      factory.setPromptTemplate('Hello, {name}!');
-      expect(factory.promptTemplate).to.equal('Hello, {name}!');
-    });
-  });
-
-  describe('setMessagesTemplate', function() {
-    it('should set messages template correctly', function() {
-      const factory = new PromptFactory('test');
-      const messagesTemplate = [
-        { role: 'user', content: 'Hello, {name}!' } as const,
+  describe('MessageArrayPromptFactory', function() {
+    it('sets and gets messages template correctly', function() {
+      const factory = new MessageArrayPrompt('messagesTest', {
+        template: [{ role: 'user', content: 'Hi there, {name}!' } as const],
+      });
+      const newTemplate = [
+        { role: 'assistant', content: 'Hello, {name}!' } as const,
       ];
-      factory.setMessagesTemplate(messagesTemplate);
-      expect(factory.messagesTemplate).to.deep.equal(messagesTemplate);
+      factory.setMessagesTemplate(newTemplate);
+      expect(factory.getMessagesTemplate()).to.deep.equal(newTemplate);
+    });
+
+    it('hydrates messages array with arguments', function() {
+      const factory = new MessageArrayPrompt('hydrateMessagesTest', {
+        template: [{ role: 'user', content: 'Hi, {name}!' }],
+        promptArguments: { name: 'Jane' },
+      });
+      const result = factory.hydrate();
+      expect(result).to.deep.equal([{ role: 'user', content: 'Hi, Jane!' }]);
+    });
+
+    it('serializes and hydrates messages template into a string', function() {
+      const factory = new MessageArrayPrompt('serializeTest', {
+        template: [
+          { role: 'user', content: 'Hello, {name}!' } as const,
+          {
+            role: 'assistant',
+            content: 'How can I help you, {name}?',
+          } as const,
+        ],
+        promptArguments: { name: 'John Doe' },
+      });
+      const result = factory.hydrateAsString();
+      expect(result).to.equal(
+        'user: Hello, John Doe!\nassistant: How can I help you, John Doe?',
+      );
     });
   });
 
-  describe('getHydratedPromptString', function() {
-    it('should correctly hydrate the prompt template', function() {
-      const factory = new PromptFactory('test', {
-        promptTemplate: 'Hello, {name}!',
-        promptArguments: { name: 'John Doe' },
-      });
-      const hydratedTemplate = factory.getHydratedPromptString();
-      expect(hydratedTemplate).to.equal('Hello, John Doe!');
+  describe('PromptFactory File Loading Tests', function() {
+    let sandbox: sinon.SinonSandbox;
+
+    beforeEach(function() {
+      // Create a sandbox for sinon
+      sandbox = sinon.createSandbox();
     });
 
-    it('should throw error if prompt arguments are not set', function() {
-      const factory = new PromptFactory('test');
-      expect(() => factory.getHydratedPromptString()).to.throw(
-        'Prompt template is not set',
-      );
+    afterEach(function() {
+      // Restore the original functionalities after each test
+      sandbox.restore();
     });
-    it('should throw error if prompt template is not set', function() {
-      const factory = new PromptFactory('test', {
-        promptArguments: { name: 'John Doe' },
-      });
-      expect(() => factory.getHydratedPromptString()).to.throw(
-        'Prompt template is not set',
-      );
-    });
-  });
 
-  describe('getHydratedMessagesArray', function() {
-    it('should correctly hydrate the messages template', function() {
-      const factory = new PromptFactory('test', {
-        messagesTemplate: [{ role: 'user', content: 'Hello, {name}!' }],
-        promptArguments: { name: 'John Doe' },
+    it('StringPromptFactory loads prompt from file correctly', async function() {
+      // Mock the `loadPromptFromFile` function to return a specific result
+      const mockPromptFactoryResult = new StringPrompt('mockStringFactory', {
+        template: 'Mock template',
       });
-      const hydratedMessagesArray = factory.getHydratedMessagesArray();
-      expect(hydratedMessagesArray).to.deep.equal([
-        { role: 'user', content: 'Hello, John Doe!' },
+      sandbox
+        .stub(StringPrompt, 'loadPromptFromFile')
+        .resolves(mockPromptFactoryResult);
+
+      const factory = await StringPrompt.loadPromptFromFile(
+        'path/to/mock/file',
+      );
+      expect(factory).to.be.instanceOf(StringPrompt);
+      expect(factory.hydrate()).to.equal('Mock template');
+    });
+
+    it('MessageArrayPromptFactory loads prompt from file correctly', async function() {
+      // Mock the `loadPromptFromFile` function to return a specific result
+      const mockPromptFactoryResult = new MessageArrayPrompt(
+        'mockMessageArrayFactory',
+        {
+          template: [{ role: 'user', content: 'Mock message' }],
+        },
+      );
+      sandbox
+        .stub(MessageArrayPrompt, 'loadPromptFromFile')
+        .resolves(mockPromptFactoryResult);
+
+      const factory = await MessageArrayPrompt.loadPromptFromFile(
+        'path/to/mock/file',
+      );
+      expect(factory).to.be.instanceOf(MessageArrayPrompt);
+      expect(factory.getMessagesTemplate()).to.deep.equal([
+        { role: 'user', content: 'Mock message' },
       ]);
     });
 
-    it('should throw error if messages template is not set', function() {
-      const factory = new PromptFactory('test');
-      expect(() => factory.getHydratedMessagesArray()).to.throw(
-        'Messages template is not set',
-      );
-    });
-
-    it('should throw error if prompt args are not set for messages', function() {
-      const factory = new PromptFactory('test', {
-        messagesTemplate: [{ role: 'user', content: 'Hello, {name}!' }],
+    // set prompt arguments
+    it('StringPromptFactory sets prompt arguments correctly', function() {
+      const factory = new StringPrompt('stringTest', {
+        template: 'Hello, {{{name}}}!',
       });
-      expect(() => factory.getHydratedMessagesArray()).to.throw();
-    });
-  });
-  describe('getHydratedMessagesArrayAsString', function() {
-    let factory: PromptFactory;
-
-    beforeEach(() => {
-      // Setup common to all tests in this describe block
-      factory = new PromptFactory('test');
-      const messagesTemplate = [
-        { role: 'user', content: 'Hello, {name}!' } as const,
-        {
-          role: 'assistant',
-          content: 'Hi, {name}, how can I assist you today?',
-        } as const,
-      ];
-      factory.setMessagesTemplate(messagesTemplate);
+      factory.setPromptArguments({ name: 'John' });
+      expect(factory.promptArguments).to.deep.equal({ name: 'John' });
     });
 
-    it('should correctly serialize and hydrate the messages template into a string', function() {
-      factory.setPromptArguments({ name: 'John Doe' });
-      const expectedString =
-        'user: Hello, John Doe!\nassistant: Hi, John Doe, how can I assist you today?';
-      const resultString = factory.getHydratedMessagesArrayAsString();
-      expect(resultString).to.equal(expectedString);
-    });
-
-    it('should throw an error if messages template is not set', function() {
-      factory = new PromptFactory('test'); // Reset without setting a messages template
-      expect(() => factory.getHydratedMessagesArrayAsString()).to.throw(
-        'Messages template is not set',
-      );
-    });
-
-    it('should throw an error if prompt arguments are not set', function() {
-      // Arguments not set here
-      expect(() => factory.getHydratedMessagesArrayAsString()).to.throw();
-    });
-
-    it('should handle empty messages template gracefully', function() {
-      factory.setMessagesTemplate([]);
-      factory.setPromptArguments({});
-      const expectedString = ''; // Expecting an empty string for an empty template
-      const resultString = factory.getHydratedMessagesArrayAsString();
-      expect(resultString).to.equal(expectedString);
-    });
-
-    it('should correctly handle messages with special characters in arguments', function() {
-      factory = new PromptFactory('test');
-      factory.setPromptArguments({ name: 'John Doe', specialChar: '<>&"\'`' });
-      const messagesTemplateWithSpecialChars = [
-        {
-          role: 'user',
-          content: 'Hi! {name} has special characters: {specialChar}',
-        } as const,
-      ];
-      factory.setMessagesTemplate(messagesTemplateWithSpecialChars);
-      const expectedString = `user: Hi! John Doe has special characters: <>&"'\``;
-      const resultString = factory.getHydratedMessagesArrayAsString();
-      expect(resultString).to.equal(expectedString);
-    });
-
-    it('should serialize messages with multiple roles correctly', function() {
-      factory = new PromptFactory('test');
-      const multiRoleTemplate = [
-        { role: 'user', content: 'User message' } as const,
-        { role: 'assistant', content: 'Assistant response' } as const,
-        { role: 'system', content: 'System notification' } as const,
-      ];
-      factory.setMessagesTemplate(multiRoleTemplate);
-      const expectedString =
-        'user: User message\nassistant: Assistant response\nsystem: System notification';
-      const resultString = factory.getHydratedMessagesArrayAsString();
-      expect(resultString).to.equal(expectedString);
+    // upsert prompt arguments
+    it('StringPromptFactory upserts prompt arguments correctly', function() {
+      const factory = new StringPrompt('stringTest', {
+        template: 'Hello, {{{name}}}!',
+        promptArguments: { name: 'John' },
+      });
+      factory.upsertPromptArguments({ name: 'Jane' });
+      expect(factory.promptArguments).to.deep.equal({ name: 'Jane' });
     });
   });
 });

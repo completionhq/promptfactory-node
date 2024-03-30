@@ -9,6 +9,4 @@
 !/README.md
 !/VERSION
 !/package.json
-!/cjs/**/*
-!/esm/**/*
-!/types/**/*
+!/dist/**/*
