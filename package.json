@@ -1,6 +1,6 @@
 {
   "name": "@completionhq/promptfactory-node",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "The PromptFactory Node SDK is a fast and lightweight to create and manage prompts for your LLM application.",
   "author": "Completion Team <help@completionhq.com>",
   "license": "MIT",
