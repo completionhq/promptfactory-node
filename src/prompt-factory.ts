@@ -2,13 +2,14 @@ import { FileSerializationFormat, loadPromptFromFile } from './file-serializer';
 import {
   AbstractPromptFactoryOptions as AbstractPromptOptions,
   ChatCompletionParameter,
+  CustomPromptSerializationFormat,
   MessageArrayPromptFactoryOptions as MessageArrayPromptOptions,
   PromptArguments,
   PromptParser,
+  PromptSerializationFormat,
   StringPromptFactoryOptions as StringPromptOptions,
 } from './types';
 import {
-  PromptSerializationFormat,
   deserializeChatCompletionParameters,
   hydrateAndValidateFStringTemplate,
   serializeChatCompletionParameters,
@@ -53,10 +54,21 @@ export class AbstractPrompt {
     template: string | Array<ChatCompletionParameter>,
     promptArguments: PromptArguments,
     parser: PromptParser,
+    promptSerializationFormat: PromptSerializationFormat = PromptSerializationFormat.JSON,
+    customFormat?: CustomPromptSerializationFormat,
   ): string {
+    if (promptSerializationFormat === PromptSerializationFormat.CUSTOM) {
+      if (customFormat === undefined) {
+        throw new Error('Custom format is not provided');
+      }
+    }
+
     let hydratedTemplate: string;
     const templateAsString = Array.isArray(template)
-      ? serializeChatCompletionParameters(template)
+      ? serializeChatCompletionParameters(template, {
+          format: promptSerializationFormat,
+          customFormat: customFormat,
+        })
       : template;
     switch (parser) {
       case PromptParser.FString:
@@ -191,9 +203,11 @@ export class MessageArrayPrompt extends AbstractPrompt {
 
     const serializedPrompt = serializeChatCompletionParameters(this.template, {
       format: PromptSerializationFormat.CUSTOM,
-      customLineDelimiter: '\n',
-      customRoleDelimiter: ': ',
-      customNameDelimiter: ' ',
+      customFormat: {
+        customLineDelimiter: '\n',
+        customRoleDelimiter: ': ',
+        customNameDelimiter: ' ',
+      },
     });
 
     return hydrateAndValidateFStringTemplate(

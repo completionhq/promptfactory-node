@@ -1,4 +1,13 @@
-import { ChatCompletionParameter, PromptArguments } from './types';
+import {
+  ChatCompletionParameter,
+  CustomPromptSerializationFormat,
+  DEFAULT_CUSTOM_PROMPT_SERIALIZATION_FORMAT,
+  DEFAULT_LINE_DELIMITER,
+  DEFAULT_NAME_DELIMITER,
+  DEFAULT_ROLE_DELIMITER,
+  PromptArguments,
+  PromptSerializationFormat,
+} from './types';
 
 export const hydrateAndValidateFStringTemplate = (
   templateStr: string,
@@ -22,23 +31,15 @@ export const hydrateAndValidateFStringTemplate = (
         throw new Error(`Variable "${varName}" is not provided in promptArgs.`);
       }
       foundVariables.add(varName);
-      return promptArgs[varName].toString();
+
+      // Escape special characters in the variable value that could break JSON.parse later
+      const variableValue = JSON.stringify(promptArgs[varName]);
+      return variableValue.substring(1, variableValue.length - 1);
     }
   });
 
   return replacedStr;
 };
-
-// Define an enumeration for supported serialization formats
-export enum PromptSerializationFormat {
-  JSON = 'json',
-  CUSTOM = 'custom',
-}
-
-export const DEFAULT_LINE_DELIMITER = '<&&pf-line&&>';
-export const DEFAULT_ROLE_DELIMITER = '=>>';
-
-export const DEFAULT_NAME_DELIMITER = '$$';
 
 export function hasName(
   param: ChatCompletionParameter,
@@ -51,14 +52,9 @@ export const serializeChatCompletionParameters = (
   messages: Array<ChatCompletionParameter>,
   options: {
     format?: PromptSerializationFormat;
-    customRoleDelimiter?: string;
-    customLineDelimiter?: string;
-    customNameDelimiter?: string;
+    customFormat?: CustomPromptSerializationFormat;
   } = {
     format: PromptSerializationFormat.JSON,
-    customRoleDelimiter: DEFAULT_ROLE_DELIMITER,
-    customLineDelimiter: DEFAULT_LINE_DELIMITER,
-    customNameDelimiter: DEFAULT_NAME_DELIMITER,
   },
 ): string => {
   if (options.format === PromptSerializationFormat.JSON) {
@@ -74,10 +70,16 @@ export const serializeChatCompletionParameters = (
       throw new Error('PromptFactory: Failed to stringify JSON.');
     }
   } else {
+    if (!options.customFormat) {
+      options.customFormat = DEFAULT_CUSTOM_PROMPT_SERIALIZATION_FORMAT;
+    }
     // Use custom serialization with provided delimiter
-    const roleDelimiter = options.customRoleDelimiter ?? DEFAULT_ROLE_DELIMITER;
-    const lineDelimiter = options.customLineDelimiter ?? DEFAULT_LINE_DELIMITER;
-    const nameDelimiter = options.customNameDelimiter ?? DEFAULT_NAME_DELIMITER;
+    const roleDelimiter =
+      options?.customFormat?.customRoleDelimiter ?? DEFAULT_ROLE_DELIMITER;
+    const lineDelimiter =
+      options?.customFormat?.customLineDelimiter ?? DEFAULT_LINE_DELIMITER;
+    const nameDelimiter =
+      options?.customFormat?.customNameDelimiter ?? DEFAULT_NAME_DELIMITER;
 
     return messages
       .map(param => {
@@ -96,14 +98,10 @@ export const deserializeChatCompletionParameters = (
   serialized: string,
   options: {
     format: PromptSerializationFormat;
-    customRoleDelimiter?: string;
-    customLineDelimiter?: string;
-    customNameDelimiter?: string;
+    customFormat?: CustomPromptSerializationFormat;
   } = {
     format: PromptSerializationFormat.JSON,
-    customRoleDelimiter: DEFAULT_ROLE_DELIMITER,
-    customLineDelimiter: DEFAULT_LINE_DELIMITER,
-    customNameDelimiter: DEFAULT_NAME_DELIMITER,
+    customFormat: DEFAULT_CUSTOM_PROMPT_SERIALIZATION_FORMAT,
   },
 ): Array<ChatCompletionParameter> => {
   if (options.format === PromptSerializationFormat.JSON) {
@@ -112,17 +110,22 @@ export const deserializeChatCompletionParameters = (
       return JSON.parse(serialized);
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(
-          `PromptFactory: Failed to parse JSON: ${error.message}`,
-        );
+        throw new Error(`PromptFactory: Failed to parse JSON: ${error}`);
       }
       throw new Error('PromptFactory: Failed to parse JSON.');
     }
   } else {
-    // Use custom deserialization with provided delimiter
-    const roleDelimiter = options.customRoleDelimiter ?? DEFAULT_ROLE_DELIMITER;
-    const lineDelimiter = options.customLineDelimiter ?? DEFAULT_LINE_DELIMITER;
-    const nameDelimiter = options.customNameDelimiter ?? DEFAULT_NAME_DELIMITER;
+    if (!options.customFormat) {
+      options.customFormat = DEFAULT_CUSTOM_PROMPT_SERIALIZATION_FORMAT;
+    }
+    // Use custom serialization with provided delimiter
+    const roleDelimiter =
+      options?.customFormat?.customRoleDelimiter ?? DEFAULT_ROLE_DELIMITER;
+    const lineDelimiter =
+      options?.customFormat?.customLineDelimiter ?? DEFAULT_LINE_DELIMITER;
+    const nameDelimiter =
+      options?.customFormat?.customNameDelimiter ?? DEFAULT_NAME_DELIMITER;
+
     return serialized.split(lineDelimiter).map(param => {
       const delimiterIndex = param.indexOf(roleDelimiter);
       if (delimiterIndex === -1) {

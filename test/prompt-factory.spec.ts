@@ -52,6 +52,22 @@ describe('PromptFactory ', function() {
       expect(result).to.deep.equal([{ role: 'user', content: 'Hi, Jane!' }]);
     });
 
+    // messages array with newlines
+    it('hydrates messages array with newlines correctly', function() {
+      const factory = new MessageArrayPrompt('hydrateMessagesTest', {
+        template: [
+          { role: 'user', content: 'Hi, {name}!\n' },
+          { role: 'assistant', content: 'Hello, {name}!' },
+        ],
+        promptArguments: { name: 'Jane\n' },
+      });
+      const result = factory.hydrate();
+      expect(result).to.deep.equal([
+        { role: 'user', content: 'Hi, Jane\n!\n' },
+        { role: 'assistant', content: 'Hello, Jane\n!' },
+      ]);
+    });
+
     it('serializes and hydrates messages template into a string', function() {
       const factory = new MessageArrayPrompt('serializeTest', {
         template: [

@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-expressions */
 import * as assert from 'assert';
 import { expect } from 'chai';
+import { PromptSerializationFormat } from '../src/types';
 import {
-  PromptSerializationFormat,
   deserializeChatCompletionParameters,
   hydrateAndValidateFStringTemplate,
   serializeChatCompletionParameters,
@@ -146,8 +146,11 @@ describe('Utilities', () => {
       ];
       const options = {
         format: PromptSerializationFormat.CUSTOM,
-        customRoleDelimiter: '::',
-        customLineDelimiter: '||',
+        customFormat: {
+          customRoleDelimiter: '::',
+          customLineDelimiter: '||',
+          customNameDelimiter: '$$',
+        },
       };
       const expected = 'user::Hello||assistant::Hi there!';
       const result = serializeChatCompletionParameters(messages, options);
@@ -175,6 +178,7 @@ describe('Utilities', () => {
     // Define some defaults for testing
     const DefaultRoleDelimiter = '=>>';
     const DefaultLineDelimiter = '<&&prompt-factory&&>';
+    const DefaultNameDelimiter = '$$';
 
     it('should correctly deserialize a JSON string', function() {
       const serialized = JSON.stringify([
@@ -209,8 +213,11 @@ describe('Utilities', () => {
       const serialized = 'user=>>hello<&&prompt-factory&&>bot=>>hi there';
       const options = {
         format: PromptSerializationFormat.CUSTOM,
-        customRoleDelimiter: DefaultRoleDelimiter,
-        customLineDelimiter: DefaultLineDelimiter,
+        customFormat: {
+          customRoleDelimiter: DefaultRoleDelimiter,
+          customLineDelimiter: DefaultLineDelimiter,
+          customNameDelimiter: DefaultNameDelimiter,
+        },
       };
       const result = deserializeChatCompletionParameters(serialized, options);
       expect(result).to.deep.equal([
@@ -294,13 +301,19 @@ describe('Utilities', () => {
       ];
       const serializeOptions = {
         format: PromptSerializationFormat.CUSTOM,
-        customRoleDelimiter: '::',
-        customLineDelimiter: '||',
+        customFormat: {
+          customRoleDelimiter: '::',
+          customLineDelimiter: '||',
+          customNameDelimiter: '$$',
+        },
       };
       const deserializeOptions = {
         format: PromptSerializationFormat.CUSTOM,
-        customRoleDelimiter: '!=', // Intentionally incorrect
-        customLineDelimiter: '##', // Intentionally incorrect
+        customFormat: {
+          customRoleDelimiter: '!=', // Intentionally incorrect
+          customLineDelimiter: '##', // Intentionally incorrect
+          customNameDelimiter: '$$', // Intentionally incorrect
+        },
       };
 
       const serialized = serializeChatCompletionParameters(
@@ -366,7 +379,11 @@ describe('Utilities', () => {
 
       const serializationOptions = {
         format: PromptSerializationFormat.CUSTOM,
-        customNameDelimiter: '%%', // Suppose this is correctly used in serialization
+        customFormat: {
+          customNameDelimiter: '%%', // Suppose this is correctly used in serialization
+          customRoleDelimiter: '=>>', // Suppose this is correctly used in serialization
+          customLineDelimiter: '<&&pf-line&&>', // Suppose this is correctly used in serialization
+        },
       };
 
       const serialized = serializeChatCompletionParameters(

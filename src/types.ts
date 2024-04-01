@@ -35,3 +35,25 @@ export const hasMessagesTemplate = (
 };
 
 export type ChatCompletionParameter = ChatCompletionMessageParam;
+
+// Define an enumeration for supported serialization formats
+export enum PromptSerializationFormat {
+  JSON = 'json',
+  CUSTOM = 'custom',
+}
+
+export type CustomPromptSerializationFormat = {
+  customRoleDelimiter: string;
+  customLineDelimiter: string;
+  customNameDelimiter: string;
+};
+
+export const DEFAULT_LINE_DELIMITER = '<&&pf-line&&>';
+export const DEFAULT_ROLE_DELIMITER = '=>>';
+export const DEFAULT_NAME_DELIMITER = '$$';
+
+export const DEFAULT_CUSTOM_PROMPT_SERIALIZATION_FORMAT: CustomPromptSerializationFormat = {
+  customRoleDelimiter: DEFAULT_ROLE_DELIMITER,
+  customLineDelimiter: DEFAULT_LINE_DELIMITER,
+  customNameDelimiter: DEFAULT_NAME_DELIMITER,
+};
